@@ -10,10 +10,12 @@ export const NavbarPill: React.FC<NavbarPillProps> = ({ activeTab, onTabChange }
     <header className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] select-none">
       <div className="flex items-center gap-3 bg-white/85 backdrop-blur-2xl border border-gray-200/90 rounded-full px-3 py-1.5 shadow-xl shadow-black/8">
         {/* Brand / Logo badge */}
-        <div className="flex items-center gap-1.5 pl-2 pr-1 border-r border-gray-200">
-          <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-[11px] shadow-xs">
-            RS
-          </div>
+        <div className="flex items-center gap-2 pl-1 pr-1 border-r border-gray-200">
+          <img
+            src="/favicon.svg"
+            alt="Sisop Note Logo"
+            className="w-7 h-7 rounded-lg shadow-xs shrink-0 select-none pointer-events-none"
+          />
           <span className="font-extrabold text-xs tracking-tight text-gray-900 hidden sm:inline">
             Responsi Sisop
           </span>
