@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Poppins', monospace;
+  --font-serif: 'Poppins', serif;
+}
+
+*,
+*::before,
+*::after,
+html,
+body,
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+svg text {
+  font-family: 'Poppins', sans-serif !important;
+}
+
 /* Dot grid background */
 .dot-grid {
   background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
@@ -41,7 +64,7 @@
 
 /* Math formula styling */
 .math-formula {
-  font-family: 'Times New Roman', 'Georgia', serif;
+  font-family: 'Poppins', sans-serif !important;
   font-style: italic;
 }
 
