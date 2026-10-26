@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+/* Dot grid background */
+.dot-grid {
+  background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Hide scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Highlighter cursor */
+.cursor-highlighter {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23f59e0b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 11-6 6v3h9l3-3'/%3E%3Cpath d='m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4'/%3E%3C/svg%3E") 0 24, crosshair;
+}
+
+/* Smooth transitions */
+.transition-pill {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animated pill indicator */
+@keyframes pill-slide {
+  from { transform: scaleX(0.8); opacity: 0.5; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+.pill-animate {
+  animation: pill-slide 0.3s ease-out;
+}
+
+/* Canvas overlay pointer */
+.canvas-overlay {
+  touch-action: none;
+}
+
+/* Math formula styling */
+.math-formula {
+  font-family: 'Times New Roman', 'Georgia', serif;
+  font-style: italic;
+}
+
+/* Mind map node hover */
+.mindmap-node:hover {
+  filter: brightness(0.97);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Input cell styling */
+.input-cell {
+  @apply w-12 h-8 text-center border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors;
+}
+
+.input-cell.correct {
+  @apply bg-green-100 border-green-400 text-green-800;
+}
+
+.input-cell.incorrect {
+  @apply bg-red-100 border-red-400 text-red-800;
+}
+
+/* Tooltip */
+.tooltip-content {
+  @apply invisible opacity-0 absolute z-50 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 transition-all duration-200;
+  max-width: 280px;
+}
+
+.tooltip-trigger:hover .tooltip-content {
+  @apply visible opacity-100;
+}
