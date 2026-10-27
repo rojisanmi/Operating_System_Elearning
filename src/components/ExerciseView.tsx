@@ -761,10 +761,12 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
   const [totalAlloc, setTotalAlloc] = useState<string[]>(Array(numRes).fill(''));
   const [initialW, setInitialW] = useState<string[]>(Array(numRes).fill(''));
   const [markedSteps, setMarkedSteps] = useState<
-    { process: string; wAfter: string[] }[]
+    { process: string; request: string[]; allocation: string[]; wAfter: string[] }[]
   >(
     Array.from({ length: numProc }, () => ({
       process: '',
+      request: Array(numRes).fill(''),
+      allocation: Array(numRes).fill(''),
       wAfter: Array(numRes).fill(''),
     }))
   );
@@ -780,6 +782,8 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
     setMarkedSteps(
       Array.from({ length: numProc }, () => ({
         process: '',
+        request: Array(numRes).fill(''),
+        allocation: Array(numRes).fill(''),
         wAfter: Array(numRes).fill(''),
       }))
     );
@@ -794,12 +798,21 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
 
     const filled = Array.from({ length: numProc }, (_, i) => {
       if (i < answers.markedProcesses.length) {
+        const pName = answers.markedProcesses[i].process;
+        const proc = processes.find((p) => p.name === pName);
         return {
-          process: answers.markedProcesses[i].process,
+          process: pName,
+          request: proc?.request ? proc.request.map(String) : Array(numRes).fill('0'),
+          allocation: proc ? proc.allocation.map(String) : Array(numRes).fill('0'),
           wAfter: answers.markedProcesses[i].wAfter.map(String),
         };
       }
-      return { process: '', wAfter: Array(numRes).fill('') };
+      return {
+        process: '',
+        request: Array(numRes).fill(''),
+        allocation: Array(numRes).fill(''),
+        wAfter: Array(numRes).fill(''),
+      };
     });
 
     setMarkedSteps(filled);
@@ -964,7 +977,7 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
           <span className="text-xs text-gray-400 italic">Bebas memilih urutan proses selama syarat terpenuhi</span>
         </div>
         <p className="text-xs text-gray-500 mb-3">
-          Tandai proses yang memiliki alokasi 0 atau <span className="font-semibold text-rose-600">Request Q ≤ W</span>. Setelah ditandai, alokasinya dilepas ke <span className="font-semibold text-teal-600">Wbaru = W + A</span>. Jika proses tidak dapat ditandai lagi, proses sisanya mengalami Deadlock!
+          Pilih proses bertanda, isi nilai <span className="font-semibold text-rose-600">Request Q</span> dan <span className="font-semibold text-blue-600">Allocation A</span> dari proses tersebut, lalu hitung <span className="font-semibold text-teal-600">Vektor W baru = W + A</span>. Proses yang tidak dapat ditandai berarti mengalami Deadlock!
         </p>
         <div className="overflow-x-auto">
           <table className="text-sm border-separate border-spacing-x-2 border-spacing-y-1">
@@ -1059,20 +1072,38 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
                         )}
                       </div>
                     </td>
-                    {/* Auto-filled Request Q for selected process */}
+                    {/* User input for Request Q */}
                     {resourceNames.map((_, ri) => (
                       <td key={`q-${ri}`} className="text-center">
-                        <div className="w-11 h-8 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center text-xs font-mono text-gray-600">
-                          {matchedProc?.request?.[ri] ?? '-'}
-                        </div>
+                        <InputCell
+                          value={step.request[ri]}
+                          onChange={(v) => {
+                            if (checked) return;
+                            const next = [...markedSteps];
+                            next[si] = { ...next[si], request: [...next[si].request] };
+                            next[si].request[ri] = v;
+                            setMarkedSteps(next);
+                          }}
+                          correctValue={isSelected && matchedProc?.request ? matchedProc.request[ri] : undefined}
+                          checked={checked && isSelected}
+                        />
                       </td>
                     ))}
-                    {/* Auto-filled Allocation A for selected process */}
+                    {/* User input for Allocation A */}
                     {resourceNames.map((_, ri) => (
                       <td key={`a-${ri}`} className="text-center">
-                        <div className="w-11 h-8 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center text-xs font-mono text-gray-600">
-                          {matchedProc?.allocation[ri] ?? '-'}
-                        </div>
+                        <InputCell
+                          value={step.allocation[ri]}
+                          onChange={(v) => {
+                            if (checked) return;
+                            const next = [...markedSteps];
+                            next[si] = { ...next[si], allocation: [...next[si].allocation] };
+                            next[si].allocation[ri] = v;
+                            setMarkedSteps(next);
+                          }}
+                          correctValue={isSelected && matchedProc ? matchedProc.allocation[ri] : undefined}
+                          checked={checked && isSelected}
+                        />
                       </td>
                     ))}
                     {/* User input for W vector after */}
