@@ -35,7 +35,7 @@ export const App: React.FC = () => {
   const handleFitToScreen = useCallback(() => {
     if (activeTab === 'mindmap') {
       const scaleX = window.innerWidth / 3650;
-      const scaleY = window.innerHeight / 1700;
+      const scaleY = window.innerHeight / 2250;
       const scale = Math.min(scaleX, scaleY, 0.75);
       setTransform({ x: 20, y: 20, scale: Math.max(scale, 0.25) });
     } else {

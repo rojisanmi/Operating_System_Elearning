@@ -7,8 +7,11 @@ interface NavbarPillProps {
 
 export const NavbarPill: React.FC<NavbarPillProps> = ({ activeTab, onTabChange }) => {
   return (
-    <header className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] select-none">
-      <div className="flex items-center gap-3 bg-white/85 backdrop-blur-2xl border border-gray-200/90 rounded-full px-3 py-1.5 shadow-xl shadow-black/8">
+    <header
+      className="fixed top-5 left-1/2 -translate-x-1/2 select-none pointer-events-auto"
+      style={{ zIndex: 9999 }}
+    >
+      <div className="flex items-center gap-3 bg-white/95 backdrop-blur-2xl border border-gray-300 rounded-full px-3.5 py-1.5 shadow-xl shadow-black/10">
         {/* Brand / Logo badge */}
         <div className="flex items-center gap-2 pl-1 pr-1 border-r border-gray-200">
           <img

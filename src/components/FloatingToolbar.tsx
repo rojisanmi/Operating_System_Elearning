@@ -36,7 +36,10 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-6 left-6 z-[95] flex flex-col gap-2 items-start select-none">
+    <div
+      className="fixed bottom-6 left-6 flex flex-col gap-2 items-start select-none pointer-events-auto"
+      style={{ zIndex: 9999 }}
+    >
       {/* Mode hint indicator when highlighter is active */}
       {highlighterActive && (
         <div className="bg-amber-500/95 backdrop-blur-md text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-2 border border-amber-300 animate-in fade-in slide-in-from-bottom-2">

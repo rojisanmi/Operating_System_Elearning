@@ -208,7 +208,10 @@ export const BoardCanvas: React.FC<BoardCanvasProps> = ({
       onTouchEnd={handleTouchEnd}
     >
       {/* Zoom controls floating widget */}
-      <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-center gap-1.5 bg-white/90 backdrop-blur-md border border-gray-200/80 rounded-2xl p-1.5 shadow-lg shadow-black/5">
+      <div
+        className="fixed bottom-6 right-6 flex flex-col items-center gap-1.5 bg-white/95 backdrop-blur-md border border-gray-300 rounded-2xl p-1.5 shadow-xl shadow-black/10 pointer-events-auto"
+        style={{ zIndex: 9999 }}
+      >
         <button
           onClick={zoomIn}
           className="w-9 h-9 rounded-xl flex items-center justify-center text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors text-base font-bold cursor-pointer"
@@ -262,7 +265,7 @@ export const BoardCanvas: React.FC<BoardCanvasProps> = ({
           clearTrigger={clearTrigger}
           onPanStart={startPan}
           width={3800}
-          height={1800}
+          height={2300}
         />
       </div>
     </div>

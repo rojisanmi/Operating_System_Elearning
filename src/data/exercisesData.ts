@@ -73,7 +73,31 @@ export interface DetectionExercise {
   };
 }
 
-export type Exercise = AvoidanceExercise | AvoidanceMultiStepExercise | DetectionExercise;
+export interface PseudocodeQuestion {
+  id: string;
+  question: string;
+  type: 'choice' | 'number';
+  options?: string[];
+  correctAnswer: string | number;
+  explanation: string;
+}
+
+export interface DiningPhilosopherExercise {
+  type: 'dining-philosopher';
+  title: string;
+  subtitle: string;
+  contextDescription: string;
+  pseudocode: string;
+  codeBreakdown: { line: string; desc: string }[];
+  questions: PseudocodeQuestion[];
+  fullKotretan: { title: string; steps: string[] }[];
+}
+
+export type Exercise =
+  | AvoidanceExercise
+  | AvoidanceMultiStepExercise
+  | DetectionExercise
+  | DiningPhilosopherExercise;
 
 // ── Soal 1: Avoidance 1 ──────────────────────────────────────
 export const avoidance1: AvoidanceExercise = {
@@ -243,6 +267,7 @@ export const detection2: DetectionExercise = {
   type: 'detection',
   title: 'Detection 2',
   resourceNames: ['R1', 'R2', 'R3', 'R4'],
+  resourceVector: [1, 3, 3, 3],
   initialAvailable: [0, 1, 0, 2],
   processes: [
     { name: 'P1', allocation: [0, 0, 1, 0], request: [1, 0, 1, 0] },
@@ -272,7 +297,298 @@ export const detection2: DetectionExercise = {
   },
 };
 
-export const allExercises: Exercise[] = [avoidance1, avoidance2, detection1, detection2];
+// ── Soal 5: Dining Philosopher 1 (Soal Resmi UTS Dosen) ─────
+export const diningPhilosopher1: DiningPhilosopherExercise = {
+  type: 'dining-philosopher',
+  title: 'Dining Philosopher 1',
+  subtitle: 'Soal UTS Resmi: Analisis Kapasitas Semaphore Room (N = 5)',
+  contextDescription:
+    'Lima filsuf duduk melingkar dengan lima garpu. Setiap filsuf membutuhkan dua garpu untuk makan. Program menggunakan semaphore room untuk membatasi jumlah filsuf yang dapat mencoba mengambil garpu secara bersamaan.',
+  pseudocode: `const int N = 5;
+
+semaphore room = 3;
+semaphore fork[5] = {1, 1, 1, 1, 1};
+
+void philosopher(int i) {
+    while (true) {
+        think();
+
+        semWait(room);
+
+        semWait(fork[i]);
+        semWait(fork[(i + 1) % N]);
+
+        eat();
+
+        semSignal(fork[(i + 1) % N]);
+        semSignal(fork[i]);
+
+        semSignal(room);
+    }
+}`,
+  codeBreakdown: [
+    {
+      line: 'const int N = 5;',
+      desc: 'Jumlah filsuf dan jumlah garpu di meja makan.',
+    },
+    {
+      line: 'semaphore room = 3;',
+      desc: 'Maksimal 3 filsuf diizinkan mencoba mengambil garpu secara bersamaan.',
+    },
+    {
+      line: 'semaphore fork[5] = {1,1,1,1,1};',
+      desc: 'Menyediakan 5 garpu (binary semaphore), masing-masing hanya dapat digunakan oleh satu filsuf pada satu waktu.',
+    },
+    {
+      line: 'think();',
+      desc: 'Filsuf sedang berpikir (eksekusi mandiri tanpa butuh resource garpu).',
+    },
+    {
+      line: 'semWait(room);',
+      desc: 'Meminta izin untuk memasuki proses pengambilan garpu (kuota berkurang 1).',
+    },
+    {
+      line: 'semWait(fork[i]);',
+      desc: 'Mengambil garpu pertama (garpu sisi kiri filsuf i).',
+    },
+    {
+      line: 'semWait(fork[(i + 1) % N]);',
+      desc: 'Mengambil garpu kedua (garpu sisi kanan filsuf i).',
+    },
+    {
+      line: 'eat();',
+      desc: 'Filsuf makan setelah berhasil mendapatkan kedua garpu.',
+    },
+    {
+      line: 'semSignal(fork[(i + 1) % N]); semSignal(fork[i]);',
+      desc: 'Mengembalikan kedua garpu ke meja makan setelah selesai makan.',
+    },
+    {
+      line: 'semSignal(room);',
+      desc: 'Mengembalikan izin ruangan agar filsuf lain dapat mencoba mengambil garpu.',
+    },
+  ],
+  questions: [
+    {
+      id: 'q1',
+      question: 'a) Apa fungsi room = 3 dalam program tersebut?',
+      type: 'choice',
+      options: [
+        'Membatasi maksimal 3 filsuf yang boleh mencoba mengambil garpu bersamaan, menjamin minimal 1 filsuf pasti mendapat 2 garpu (mencegah deadlock).',
+        'Menentukan bahwa setiap proses filsuf hanya dapat makan maksimal 3 suapan.',
+        'Mengurangi jumlah garpu fisik di atas meja dari 5 menjadi 3 buah.',
+        'Membatasi durasi waktu makan setiap filsuf menjadi maksimal 3 detik.',
+      ],
+      correctAnswer:
+        'Membatasi maksimal 3 filsuf yang boleh mencoba mengambil garpu bersamaan, menjamin minimal 1 filsuf pasti mendapat 2 garpu (mencegah deadlock).',
+      explanation:
+        'room = 3 adalah counting semaphore pengontrol kapasitas. Dengan 5 garpu dan maksimal 3 filsuf yang aktif memperebutkan garpu, menurut Pigeonhole Principle dijamin minimal 1 filsuf akan mendapatkan 2 garpu sekaligus (karena 5 garpu / 3 orang = setidaknya satu orang dapat ≥ 2 garpu), sehingga Circular Wait terputus dan deadlock dicegah.',
+    },
+    {
+      id: 'q2',
+      question:
+        'b) Jika nilai room diubah menjadi 5 dan seluruh filsuf berhasil mengambil garpu pertama sebelum meminta garpu kedua, masalah apa yang dapat terjadi?',
+      type: 'choice',
+      options: [
+        'DEADLOCK (Kelima filsuf memegang 1 garpu dan saling menunggu garpu kedua dari tetangganya, terblokir selamanya).',
+        'STARVATION (Hanya filsuf nomor 0 yang kelaparan, sedangkan 4 filsuf lainnya makan bergantian).',
+        'LIVELOCK (Filsuf terus-menerus melepaskan dan mengambil garpu tanpa pernah terblokir).',
+        'NORMAL (Tidak ada masalah karena 5 filsuf memiliki 5 garpu).',
+      ],
+      correctAnswer:
+        'DEADLOCK (Kelima filsuf memegang 1 garpu dan saling menunggu garpu kedua dari tetangganya, terblokir selamanya).',
+      explanation:
+        'Jika room = 5, kelima filsuf dapat masuk bersamaan. Jika semua mengeksekusi semWait(fork[i]) sebelum meminta garpu kedua, maka setiap filsuf memegang 1 garpu (Hold and Wait) dan menunggu garpu kanan yang dipegang tetangganya (Circular Wait: P0→P1→P2→P3→P4→P0). Karena garpu tidak bisa direbut paksa (No Preemption) dan 1 garpu hanya untuk 1 orang (Mutual Exclusion), keempat kondisi Coffman terpenuhi dan terjadi DEADLOCK.',
+    },
+    {
+      id: 'q3',
+      question:
+        'c) Berapakah nilai maksimum semaphore room yang paling efisien untuk N = 5 filsuf agar kapasitas meja makan optimal namun tetap 100% bebas deadlock?',
+      type: 'number',
+      correctAnswer: 4,
+      explanation:
+        'Nilai optimal adalah N - 1 = 5 - 1 = 4. Dengan room = 4, terdapat 4 filsuf yang memperebutkan 5 garpu. Berdasarkan Pigeonhole Principle, minimal ada 1 filsuf yang pasti memperoleh 2 garpu (5 garpu dibagi 4 orang = minimal satu orang dapat 2 garpu). Filsuf tersebut akan makan dan melepaskan garpunya, memicu eksekusi filsuf lainnya.',
+    },
+    {
+      id: 'q4',
+      question:
+        'd) Manakah dari empat kondisi Coffman yang berhasil dieliminasi (diputus) oleh penerapan semaphore room = 4?',
+      type: 'choice',
+      options: [
+        'Circular Wait (Memutus rantai tunggu melingkar tertutup karena tidak semua filsuf dapat memegang 1 garpu secara bersamaan).',
+        'Mutual Exclusion (Memperbolehkan dua filsuf menggunakan satu garpu secara bersama-sama).',
+        'No Preemption (Memaksa sistem operasi merebut garpu dari tangan filsuf).',
+        'Hold and Wait (Melarang filsuf memegang garpu pertama jika belum ada garpu kedua).',
+      ],
+      correctAnswer:
+        'Circular Wait (Memutus rantai tunggu melingkar tertutup karena tidak semua filsuf dapat memegang 1 garpu secara bersamaan).',
+      explanation:
+        'Penggunaan semaphore room memutus kondisi Circular Wait (Pencegahan Tidak Langsung / Indirect Prevention). Dengan membatasi jumlah filsuf menjadi N - 1, skenario di mana semua N filsuf memegang 1 garpu dan saling menunggu garpu berikutnya secara siklikal tidak akan pernah dapat terjadi.',
+    },
+  ],
+  fullKotretan: [
+    {
+      title: 'Langkah 1: Analisis Variabel dan Inisialisasi Semaphore',
+      steps: [
+        '• N = 5: Terdapat 5 proses (filsuf P0, P1, P2, P3, P4) dan 5 resource (garpu F0, F1, F2, F3, F4).',
+        '• semaphore fork[5] = {1,1,1,1,1}: 5 binary semaphore yang mengontrol akses mutual exclusion ke setiap garpu.',
+        '• semaphore room = 3: Counting semaphore yang membatasi konkurensi maksimal 3 proses yang boleh memasuki fase akuisisi resource.',
+      ],
+    },
+    {
+      title: 'Langkah 2: Pembuktian Pencegahan Deadlock (Pigeonhole Principle)',
+      steps: [
+        '• Jika kapasitas ruangan dibatasi ke K filsuf, jumlah garpu total adalah N = 5.',
+        '• Skenario terburuk (worst-case): Setiap filsuf yang berada di ruangan berhasil mengambil 1 garpu.',
+        '• Jumlah garpu yang tersisa di meja = N - K.',
+        '• Jika K = 3 (atau K = 4), sisa garpu di meja adalah 5 - 3 = 2 garpu (atau 5 - 4 = 1 garpu).',
+        '• Karena masih ada sisa garpu, minimal 1 filsuf dijamin dapat mengambil garpu kedua dan makan hingga tuntas.',
+        '• Setelah selesai, filsuf tersebut melakukan semSignal(fork) dan semSignal(room), membebaskan 2 garpu dan 1 slot ruangan untuk filsuf lainnya.',
+      ],
+    },
+    {
+      title: 'Langkah 3: Pembuktian Terjadinya Deadlock pada room = 5',
+      steps: [
+        '• 1. Mutual Exclusion: Setiap garpu Fi hanya dapat dipegang oleh 1 filsuf (fork[i] bernilai 0 saat dipegang).',
+        '• 2. Hold and Wait: P0 memegang F0 sambil menunggu F1; P1 memegang F1 sambil menunggu F2; P2 memegang F2 sambil menunggu F3; P3 memegang F3 sambil menunggu F4; P4 memegang F4 sambil menunggu F0.',
+        '• 3. No Preemption: Tidak ada filsuf yang dapat dipaksa melepaskan garpu yang sudah dipegangnya.',
+        '• 4. Circular Wait: P0 → P1 → P2 → P3 → P4 → P0 membentuk siklus melingkar tertutup.',
+        '• Kesimpulan: Keempat kondisi Coffman terpenuhi → DEADLOCK MUTLAK.',
+      ],
+    },
+  ],
+};
+
+// ── Soal 6: Dining Philosopher 2 (Trace & Solusi Asimetris) ──
+export const diningPhilosopher2: DiningPhilosopherExercise = {
+  type: 'dining-philosopher',
+  title: 'Dining Philosopher 2',
+  subtitle: 'Trace Pseudocode, Urutan Eksekusi & Solusi Asimetris (UTS)',
+  contextDescription:
+    'Analisis variasi pseudocode Dining Philosopher: kesalahan urutan semaphore wait, solusi asimetris tanpa semaphore room, dan perbedaan kegagalan konkurensi (Deadlock vs Starvation vs Livelock).',
+  pseudocode: `// Variasi Pseudocode: Modifikasi Baris SemWait
+void philosopher_modified(int i) {
+    while (true) {
+        think();
+
+        semWait(fork[i]);            // [BARIS DITUKAR!]
+        semWait(room);               // semWait(room) dipindah setelah semWait(fork[i])
+        semWait(fork[(i + 1) % 5]);
+
+        eat();
+
+        semSignal(fork[(i + 1) % 5]);
+        semSignal(room);
+        semSignal(fork[i]);
+    }
+}`,
+  codeBreakdown: [
+    {
+      line: 'semWait(fork[i]); [sebelum room]',
+      desc: 'BAHAYA: Filsuf mengambil garpu pertama sebelum meminta izin ruangan!',
+    },
+    {
+      line: 'semWait(room); [setelah fork[i]]',
+      desc: 'Izin ruangan baru dicek setelah garpu pertama sudah digenggam.',
+    },
+    {
+      line: 'semWait(fork[(i + 1) % 5]);',
+      desc: 'Mencoba mengambil garpu kedua.',
+    },
+    {
+      line: 'eat();',
+      desc: 'Makan hanya jika berhasil melewati ketiga semWait di atas.',
+    },
+  ],
+  questions: [
+    {
+      id: 'q1',
+      question:
+        'a) Jika baris semWait(room) dipindahkan ke setelah semWait(fork[i]), apakah room = 4 masih efektif mencegah deadlock?',
+      type: 'choice',
+      options: [
+        'TIDAK EFEKTIF (Kelima filsuf sudah terlanjur mengambil garpu pertama sebelum dibatasi oleh room, sehingga deadlock tetap terjadi).',
+        'TETAP EFEKTIF (Karena jumlah izin semWait(room) tetap bernilai 4, deadlock tetap tercegah).',
+        'LEBIH BAIK (Meningkatkan throughput sistem karena resource pertama diamankan lebih awal).',
+        'MENYEBABKAN CRASH (Menghasilkan error kompilasi karena struktur semWait tidak valid).',
+      ],
+      correctAnswer:
+        'TIDAK EFEKTIF (Kelima filsuf sudah terlanjur mengambil garpu pertama sebelum dibatasi oleh room, sehingga deadlock tetap terjadi).',
+      explanation:
+        'Sangat fatal! Jika semWait(fork[i]) dieksekusi sebelum semWait(room), kelima filsuf dapat mengeksekusi semWait(fork[i]) secara simultan. Kelima garpu telah habis terambil (masing-masing filsuf memegang 1 garpu). Setelah itu, 4 filsuf berhasil lolos semWait(room) dan 1 tertahan di room, namun ke-4 filsuf tersebut tetap terblokir saat mencoba semWait(fork[(i+1)%5]) karena garpu kedua mereka dipegang tetangganya. Deadlock tetap terjadi!',
+    },
+    {
+      id: 'q2',
+      question:
+        'b) Perhatikan Solusi Asimetris: Filsuf genap (0, 2, 4) mengambil fork[i] lalu fork[(i+1)%5], sedangkan filsuf ganjil (1, 3) mengambil fork[(i+1)%5] lalu fork[i]. Mengapa solusi ini bebas deadlock tanpa perlu semaphore room?',
+      type: 'choice',
+      options: [
+        'Karena dua filsuf bertetangga (misal P0 dan P1) akan memperebutkan garpu yang sama terlebih dahulu, sehingga salah satu pasti terblokir sebelum memegang garpu manapun.',
+        'Karena filsuf ganjil tidak memerlukan garpu dan hanya bertindak sebagai pengamat.',
+        'Karena jumlah garpu otomatis berlipat ganda menjadi 10 garpu di memori.',
+        'Karena sistem operasi akan mengalokasikan garpu virtual tambahan untuk proses genap.',
+      ],
+      correctAnswer:
+        'Karena dua filsuf bertetangga (misal P0 dan P1) akan memperebutkan garpu yang sama terlebih dahulu, sehingga salah satu pasti terblokir sebelum memegang garpu manapun.',
+      explanation:
+        'Pada solusi asimetris, P0 (genap) meminta F0 lalu F1. P1 (ganjil) meminta F1 lalu F0. Keduanya bersaing memperebutkan F1 sebagai garpu pertama mereka! Siapa yang kalah akan terblokir SEBELUM memegang satu garpu pun. Dengan demikian, kondisi di mana setiap proses memegang 1 garpu tidak akan pernah terjadi secara siklis melingkar, memutus Circular Wait secara langsung.',
+    },
+    {
+      id: 'q3',
+      question:
+        'c) Berdasarkan slide materi kuliah studi kasus, apa perbedaan mendasar antara STARVATION dan LIVELOCK pada masalah Dining Philosopher?',
+      type: 'choice',
+      options: [
+        'Starvation: proses tertentu tidak pernah mendapat giliran makan; Livelock: proses terus aktif merespons status tapi tidak ada progres eksekusi makan.',
+        'Starvation: semua proses terhenti permanen; Livelock: hanya ada 1 proses yang berjalan.',
+        'Starvation: kehabisan memori RAM; Livelock: CPU utilization bernilai 0%.',
+        'Keduanya adalah istilah yang merujuk pada kondisi identik tanpa perbedaan teknis.',
+      ],
+      correctAnswer:
+        'Starvation: proses tertentu tidak pernah mendapat giliran makan; Livelock: proses terus aktif merespons status tapi tidak ada progres eksekusi makan.',
+      explanation:
+        'Starvation (kelaparan) terjadi saat ada filsuf yang selalu kalah dalam perebutan giliran (misal P0 dan P2 bergantian makan terus-menerus sehingga P1 kelaparan). Sedangkan Livelock adalah situasi di mana proses terus aktif mengubah state (misal semua filsuf mengambil garpu kanan, mendeteksi garpu kiri tidak ada, lalu serentak melepaskan garpu kanan, lalu serentak mengambil lagi) — proses sibuk dan CPU tinggi, namun tidak ada satu pun yang berhasil makan.',
+    },
+    {
+      id: 'q4',
+      question:
+        'd) Jika suatu variasi sistem memiliki N = 8 filsuf dan 8 garpu, berapakah nilai kapasitas semaphore room yang paling tepat digunakan?',
+      type: 'number',
+      correctAnswer: 7,
+      explanation:
+        'Formula umum pencegahan deadlock dengan semaphore room pembatas kapasitas adalah room = N - 1. Untuk N = 8 filsuf dan 8 garpu, nilai room maksimum yang menjamin bebas deadlock adalah 8 - 1 = 7.',
+    },
+  ],
+  fullKotretan: [
+    {
+      title: 'Analisis Skenario Baris Tertukar (Penempatan semWait)',
+      steps: [
+        '• Aturan Semaphore: Urutan semWait menentukan fase kritis alokasi.',
+        '• Pada kode yang benar: semWait(room) bertindak sebagai gerbang masuk (gatekeeper) sebelum ada garpu yang dipegang.',
+        '• Jika semWait(fork[i]) dilakukan sebelum semWait(room): Gerbang room tidak lagi melindungi garpu pertama.',
+        '• Kelima proses dapat meraih fork[i] masing-masing, sehingga kondisi Hold & Wait terjadi pada skala penuh (5 garpu terikat ke 5 proses).',
+      ],
+    },
+    {
+      title: 'Analisis Solusi Asimetris (Chandy / Misra / Dijkstra)',
+      steps: [
+        '• Filsuf genap (i genap): Ambil garpu min(i, (i+1)%N), lalu max(i, (i+1)%N).',
+        '• Filsuf ganjil (i ganjil): Ambil garpu max(i, (i+1)%N), lalu min(i, (i+1)%N).',
+        '• Dampak: Tidak ada orientasi tunggal searah jarum jam (clockwise bias).',
+        '• Garpu diperebutkan secara berlawanan arah, memecah simetri dan mencegah siklus melingkar tertutup.',
+      ],
+    },
+  ],
+};
+
+export const allExercises: Exercise[] = [
+  avoidance1,
+  avoidance2,
+  detection1,
+  detection2,
+  diningPhilosopher1,
+  diningPhilosopher2,
+];
 
 // ── Step-by-step solution explanations (kotretan) ────────────
 

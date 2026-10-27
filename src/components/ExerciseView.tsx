@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   allExercises,
   getAvoidanceSolutionSteps,
@@ -8,6 +8,8 @@ import type {
   AvoidanceExercise,
   AvoidanceMultiStepExercise,
   DetectionExercise,
+  DiningPhilosopherExercise,
+  ExerciseProcess,
   SolutionStep,
 } from '../data/exercisesData';
 
@@ -137,6 +139,228 @@ const SolutionPanel: React.FC<{ steps: SolutionStep[]; visible: boolean }> = ({
   );
 };
 
+// ── Dynamic Banker's Algorithm Validation Engine ──
+interface AvoidanceStepValidation {
+  stepIndex: number;
+  process: string;
+  isValidProcess: boolean;
+  expectedAvailable: number[];
+  errorMessage?: string;
+  isCorrectSlot: boolean;
+}
+
+function validateAvoidanceOrder(
+  processes: ExerciseProcess[],
+  initialAvailable: number[],
+  stillNeeds: number[][],
+  userOrder: { process: string; available: string[] }[]
+): {
+  results: AvoidanceStepValidation[];
+  isAllExecuted: boolean;
+} {
+  let currentV = [...initialAvailable];
+  const executed = new Set<string>();
+  const results: AvoidanceStepValidation[] = [];
+
+  for (let si = 0; si < processes.length; si++) {
+    const step = userOrder[si];
+    const pName = step?.process?.trim() || '';
+
+    // If slot is empty
+    if (!pName) {
+      // Find if any unexecuted process CAN run with currentV
+      const candidates = processes.filter(
+        (p, idx) => !executed.has(p.name) && stillNeeds[idx].every((need, ri) => need <= currentV[ri])
+      );
+      const shouldBeEmpty = candidates.length === 0;
+      results.push({
+        stepIndex: si,
+        process: '',
+        isValidProcess: shouldBeEmpty,
+        expectedAvailable: [...currentV],
+        isCorrectSlot: shouldBeEmpty,
+        errorMessage: shouldBeEmpty
+          ? undefined
+          : `Masih ada proses (${candidates.map((c) => c.name).join(', ')}) yang dapat dieksekusi!`,
+      });
+      continue;
+    }
+
+    const pIdx = processes.findIndex((p) => p.name === pName);
+    if (pIdx === -1) {
+      results.push({
+        stepIndex: si,
+        process: pName,
+        isValidProcess: false,
+        expectedAvailable: [...currentV],
+        isCorrectSlot: false,
+        errorMessage: 'Proses tidak ditemukan.',
+      });
+      continue;
+    }
+
+    const proc = processes[pIdx];
+    const procNeeds = stillNeeds[pIdx];
+
+    // Duplicate check
+    if (executed.has(pName)) {
+      results.push({
+        stepIndex: si,
+        process: pName,
+        isValidProcess: false,
+        expectedAvailable: [...currentV],
+        isCorrectSlot: false,
+        errorMessage: `${pName} sudah dieksekusi sebelumnya!`,
+      });
+      continue;
+    }
+
+    // Check if Still Needs <= currentV
+    const canRun = procNeeds.every((need, ri) => need <= currentV[ri]);
+    if (!canRun) {
+      results.push({
+        stepIndex: si,
+        process: pName,
+        isValidProcess: false,
+        expectedAvailable: [...currentV],
+        isCorrectSlot: false,
+        errorMessage: `Needs(${procNeeds.join(',')}) > V(${currentV.join(',')}) — Resource tidak cukup!`,
+      });
+      continue;
+    }
+
+    // Process is valid! Compute next V
+    const nextV = currentV.map((v, ri) => v + proc.allocation[ri]);
+    results.push({
+      stepIndex: si,
+      process: pName,
+      isValidProcess: true,
+      expectedAvailable: nextV,
+      isCorrectSlot: true,
+    });
+
+    executed.add(pName);
+    currentV = nextV;
+  }
+
+  return {
+    results,
+    isAllExecuted: executed.size === processes.length,
+  };
+}
+
+// ── Dynamic Detection Algorithm Validation Engine ──
+interface DetectionStepValidation {
+  stepIndex: number;
+  process: string;
+  isValidProcess: boolean;
+  expectedW: number[];
+  errorMessage?: string;
+  isCorrectSlot: boolean;
+}
+
+function validateDetectionOrder(
+  processes: ExerciseProcess[],
+  initialW: number[],
+  userOrder: { process: string; wAfter: string[] }[]
+): {
+  results: DetectionStepValidation[];
+  isAllMarked: boolean;
+} {
+  let currentW = [...initialW];
+  const marked = new Set<string>();
+  const results: DetectionStepValidation[] = [];
+
+  for (let si = 0; si < processes.length; si++) {
+    const step = userOrder[si];
+    const pName = step?.process?.trim() || '';
+
+    // If slot is empty
+    if (!pName) {
+      // Find if any unmarked process CAN be marked
+      const candidates = processes.filter((p) => {
+        if (marked.has(p.name)) return false;
+        const isAllocZero = p.allocation.every((a) => a === 0);
+        const reqOk = p.request ? p.request.every((q, ri) => q <= currentW[ri]) : false;
+        return isAllocZero || reqOk;
+      });
+      const shouldBeEmpty = candidates.length === 0;
+      results.push({
+        stepIndex: si,
+        process: '',
+        isValidProcess: shouldBeEmpty,
+        expectedW: [...currentW],
+        isCorrectSlot: shouldBeEmpty,
+        errorMessage: shouldBeEmpty
+          ? undefined
+          : `Masih ada proses (${candidates.map((c) => c.name).join(', ')}) yang dapat ditandai!`,
+      });
+      continue;
+    }
+
+    const pIdx = processes.findIndex((p) => p.name === pName);
+    if (pIdx === -1) {
+      results.push({
+        stepIndex: si,
+        process: pName,
+        isValidProcess: false,
+        expectedW: [...currentW],
+        isCorrectSlot: false,
+        errorMessage: 'Proses tidak ditemukan.',
+      });
+      continue;
+    }
+
+    const proc = processes[pIdx];
+
+    // Duplicate check
+    if (marked.has(pName)) {
+      results.push({
+        stepIndex: si,
+        process: pName,
+        isValidProcess: false,
+        expectedW: [...currentW],
+        isCorrectSlot: false,
+        errorMessage: `${pName} sudah ditandai sebelumnya!`,
+      });
+      continue;
+    }
+
+    // Can process be marked?
+    const isAllocZero = proc.allocation.every((a) => a === 0);
+    const reqOk = proc.request ? proc.request.every((q, ri) => q <= currentW[ri]) : false;
+    if (!isAllocZero && !reqOk) {
+      results.push({
+        stepIndex: si,
+        process: pName,
+        isValidProcess: false,
+        expectedW: [...currentW],
+        isCorrectSlot: false,
+        errorMessage: `Q(${proc.request?.join(',')}) > W(${currentW.join(',')}) — Tidak dapat ditandai!`,
+      });
+      continue;
+    }
+
+    // Process is valid! Compute next W
+    const nextW = currentW.map((w, ri) => w + proc.allocation[ri]);
+    results.push({
+      stepIndex: si,
+      process: pName,
+      isValidProcess: true,
+      expectedW: nextW,
+      isCorrectSlot: true,
+    });
+
+    marked.add(pName);
+    currentW = nextW;
+  }
+
+  return {
+    results,
+    isAllMarked: marked.size === processes.length,
+  };
+}
+
 // ═══ Avoidance Exercise Component ═══
 const AvoidanceExerciseView: React.FC<{
   processes: AvoidanceExercise['processes'];
@@ -210,6 +434,15 @@ const AvoidanceExerciseView: React.FC<{
   };
 
   const steps = getAvoidanceSolutionSteps(processes, resourceVector, resourceNames, answers);
+
+  const validation = useMemo(() => {
+    return validateAvoidanceOrder(
+      processes,
+      answers.initialAvailable,
+      answers.stillNeeds,
+      execOrder
+    );
+  }, [processes, answers.initialAvailable, answers.stillNeeds, execOrder]);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
@@ -391,18 +624,16 @@ const AvoidanceExerciseView: React.FC<{
               </tr>
               {/* Step by step execution rows */}
               {execOrder.map((step, si) => {
-                const correctStep =
-                  si < answers.executionOrder.length ? answers.executionOrder[si] : null;
-                const isBlockedSlot = !correctStep;
+                const stepVal = validation.results[si];
+                const isSelected = step.process !== '';
                 const isProcessCorrect =
-                  checked && (correctStep ? step.process === correctStep.process : step.process === '');
-                const isProcessWrong =
-                  checked && (correctStep ? step.process !== correctStep.process : step.process !== '');
+                  checked && stepVal.isValidProcess && (isSelected || stepVal.isCorrectSlot);
+                const isProcessWrong = checked && !stepVal.isValidProcess;
 
                 return (
                   <tr key={si}>
                     <td className="px-1 py-1">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <select
                           value={step.process}
                           onChange={(e) => {
@@ -412,11 +643,11 @@ const AvoidanceExerciseView: React.FC<{
                             setExecOrder(next);
                           }}
                           disabled={checked}
-                          className={`w-28 h-8 border rounded-lg text-xs font-semibold text-center cursor-pointer transition-colors ${
-                            isProcessCorrect
-                              ? 'bg-emerald-100 border-emerald-500 text-emerald-900'
+                          className={`w-32 h-8 border rounded-lg text-xs font-semibold text-center cursor-pointer transition-colors ${
+                            isProcessCorrect && isSelected
+                              ? 'bg-emerald-100 border-emerald-500 text-emerald-900 font-bold'
                               : isProcessWrong
-                              ? 'bg-rose-100 border-rose-500 text-rose-900'
+                              ? 'bg-rose-100 border-rose-500 text-rose-900 font-bold'
                               : 'bg-white border-gray-300'
                           }`}
                         >
@@ -427,9 +658,14 @@ const AvoidanceExerciseView: React.FC<{
                             </option>
                           ))}
                         </select>
-                        {checked && isProcessWrong && (
-                          <span className="text-[10px] text-rose-600 font-bold whitespace-nowrap">
-                            → {correctStep ? correctStep.process : 'Blocked'}
+                        {checked && isProcessCorrect && isSelected && (
+                          <span className="text-[10px] text-emerald-700 font-bold whitespace-nowrap bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                            ✓ Valid (Needs ≤ V)
+                          </span>
+                        )}
+                        {checked && isProcessWrong && stepVal.errorMessage && (
+                          <span className="text-[10px] text-rose-700 font-bold whitespace-nowrap bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                            ✗ {stepVal.errorMessage}
                           </span>
                         )}
                       </div>
@@ -448,8 +684,8 @@ const AvoidanceExerciseView: React.FC<{
                             next[si].available[ri] = v;
                             setExecOrder(next);
                           }}
-                          correctValue={correctStep ? correctStep.availableAfter[ri] : undefined}
-                          checked={checked && !isBlockedSlot}
+                          correctValue={isSelected ? stepVal.expectedAvailable[ri] : undefined}
+                          checked={checked && isSelected}
                         />
                       </td>
                     ))}
@@ -573,9 +809,37 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
 
   const steps = getDetectionSolutionSteps(exercise);
 
+  const validation = useMemo(() => {
+    return validateDetectionOrder(processes, answers.availableW, markedSteps);
+  }, [processes, answers.availableW, markedSteps]);
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
-      {/* Given data side by side */}
+      {/* Resource Vector R (Total Sumber Daya Sistem) */}
+      {exercise.resourceVector && (
+        <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Resource Vector R (Total Sumber Daya Sistem)
+            </h4>
+            <span className="text-xs text-slate-500 font-mono font-semibold">
+              R = ({exercise.resourceVector.join(', ')})
+            </span>
+          </div>
+          <div className="flex gap-3">
+            {resourceNames.map((r, i) => (
+              <div key={r} className="text-center">
+                <div className="text-xs text-slate-600 font-mono font-semibold mb-1">{r}</div>
+                <div className="w-12 h-9 bg-white border border-slate-300 rounded-lg flex items-center justify-center text-sm font-bold text-slate-800 font-mono shadow-sm">
+                  {exercise.resourceVector![i]}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Given data side by side: Matrix A & Matrix Q */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Allocation Matrix A */}
         <div>
@@ -604,15 +868,16 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
                   ))}
                 </tr>
               ))}
-              {/* Total row if resource vector provided */}
+              {/* Total Allocation row */}
               {exercise.resourceVector && (
                 <tr>
-                  <td className="px-2 py-1 font-bold text-gray-600 text-xs">Total</td>
+                  <td className="px-2 py-1 font-bold text-gray-600 text-xs">Total Alloc</td>
                   {resourceNames.map((_, ri) => (
                     <td key={ri} className="text-center">
                       <InputCell
                         value={totalAlloc[ri]}
                         onChange={(v) => {
+                          if (checked) return;
                           const next = [...totalAlloc];
                           next[ri] = v;
                           setTotalAlloc(next);
@@ -660,53 +925,33 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
         </div>
       </div>
 
-      {/* Resource Vector R (if given) */}
-      {exercise.resourceVector && (
-        <div className="mb-5">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-            Resource Vector R
-          </h4>
-          <div className="flex gap-3">
-            {resourceNames.map((r, i) => (
-              <div key={r} className="text-center">
-                <div className="text-xs text-gray-500 font-mono mb-1">{r}</div>
-                <div className="w-11 h-8 bg-gray-100 border border-gray-300 rounded-lg flex items-center justify-center text-sm font-bold text-gray-800 font-mono">
-                  {exercise.resourceVector![i]}
-                </div>
-              </div>
-            ))}
+      {/* Available Vector W (Awal) */}
+      <div className="mb-6 p-4 bg-teal-50/50 border border-teal-200 rounded-xl">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-teal-800">
+              Available Vector W (Awal / W₀)
+            </h4>
+            <p className="text-[11px] text-teal-700 mt-0.5">
+              Dihitung dari: <span className="font-mono font-bold">W = Resource Vector (R) − Total Allocation</span>
+            </p>
           </div>
         </div>
-      )}
-
-      {/* Available Vector W (Awal) */}
-      <div className="mb-6">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-teal-700 mb-2">
-          Available Vector W (Awal)
-        </h4>
-        <div className="flex gap-3">
+        <div className="flex gap-3 mt-3">
           {resourceNames.map((r, ri) => (
             <div key={r} className="text-center">
-              <div className="text-xs text-teal-700 font-mono mb-1">{r}</div>
-              {exercise.resourceVector ? (
-                <InputCell
-                  value={initialW[ri]}
-                  onChange={(v) => {
-                    const next = [...initialW];
-                    next[ri] = v;
-                    setInitialW(next);
-                  }}
-                  correctValue={answers.availableW[ri]}
-                  checked={checked}
-                />
-              ) : (
-                <InputCell
-                  value={String(exercise.initialAvailable[ri])}
-                  onChange={() => {}}
-                  readOnly
-                  checked={false}
-                />
-              )}
+              <div className="text-xs text-teal-700 font-mono font-bold mb-1">{r}</div>
+              <InputCell
+                value={initialW[ri]}
+                onChange={(v) => {
+                  if (checked) return;
+                  const next = [...initialW];
+                  next[ri] = v;
+                  setInitialW(next);
+                }}
+                correctValue={answers.availableW[ri]}
+                checked={checked}
+              />
             </div>
           ))}
         </div>
@@ -714,15 +959,18 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
 
       {/* Urutan Proses Bertanda */}
       <div className="border-t border-gray-100 pt-5">
-        <h4 className="text-sm font-bold text-gray-800 mb-1">Urutan Proses Bertanda</h4>
+        <div className="flex items-center justify-between mb-1">
+          <h4 className="text-sm font-bold text-gray-800">Urutan Proses Bertanda</h4>
+          <span className="text-xs text-gray-400 italic">Bebas memilih urutan proses selama syarat terpenuhi</span>
+        </div>
         <p className="text-xs text-gray-500 mb-3">
-          Pilih proses yang dapat ditandai (karena alokasi 0 atau Request Q ≤ W), lalu isi Vektor W setelah proses melepaskan alokasinya. Proses yang tidak dapat ditandai berarti mengalami Deadlock!
+          Tandai proses yang memiliki alokasi 0 atau <span className="font-semibold text-rose-600">Request Q ≤ W</span>. Setelah ditandai, alokasinya dilepas ke <span className="font-semibold text-teal-600">Wbaru = W + A</span>. Jika proses tidak dapat ditandai lagi, proses sisanya mengalami Deadlock!
         </p>
         <div className="overflow-x-auto">
           <table className="text-sm border-separate border-spacing-x-2 border-spacing-y-1">
             <thead>
               <tr>
-                <th className="px-2 py-1 text-gray-500 font-bold text-xs uppercase text-left">Proses</th>
+                <th className="px-2 py-1 text-gray-500 font-bold text-xs uppercase text-left">Proses Bertanda</th>
                 <th
                   colSpan={numRes}
                   className="px-2 py-1 text-center font-bold text-xs text-rose-700 bg-rose-50/60 rounded-t-lg"
@@ -739,7 +987,7 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
                   colSpan={numRes}
                   className="px-2 py-1 text-center font-bold text-xs text-teal-700 bg-teal-50/60 rounded-t-lg"
                 >
-                  Vektor W
+                  Vektor W (Setelah Selesai)
                 </th>
               </tr>
               <tr>
@@ -763,21 +1011,18 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
             </thead>
             <tbody>
               {markedSteps.map((step, si) => {
-                const correctStep =
-                  si < answers.markedProcesses.length ? answers.markedProcesses[si] : null;
-                const isBlockedSlot = !correctStep;
-                const matchedProc = processes.find(
-                  (p) => p.name === (step.process || correctStep?.process)
-                );
+                const stepVal = validation.results[si];
+                const isSelected = !!step.process;
                 const isProcessCorrect =
-                  checked && (correctStep ? step.process === correctStep.process : step.process === '');
+                  checked && stepVal.isCorrectSlot && (isSelected ? stepVal.isValidProcess : true);
                 const isProcessWrong =
-                  checked && (correctStep ? step.process !== correctStep.process : step.process !== '');
+                  checked && (!stepVal.isCorrectSlot || (isSelected && !stepVal.isValidProcess));
+                const matchedProc = processes.find((p) => p.name === step.process);
 
                 return (
                   <tr key={si}>
                     <td className="px-1 py-1">
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         <select
                           value={step.process}
                           onChange={(e) => {
@@ -787,11 +1032,11 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
                             setMarkedSteps(next);
                           }}
                           disabled={checked}
-                          className={`w-28 h-8 border rounded-lg text-xs font-semibold text-center cursor-pointer transition-colors ${
-                            isProcessCorrect
-                              ? 'bg-emerald-100 border-emerald-500 text-emerald-900'
+                          className={`w-36 h-8 border rounded-lg text-xs font-semibold px-2 cursor-pointer transition-colors ${
+                            isProcessCorrect && isSelected
+                              ? 'bg-emerald-100 border-emerald-500 text-emerald-900 font-bold'
                               : isProcessWrong
-                              ? 'bg-rose-100 border-rose-500 text-rose-900'
+                              ? 'bg-rose-100 border-rose-500 text-rose-900 font-bold'
                               : 'bg-white border-gray-300'
                           }`}
                         >
@@ -802,9 +1047,14 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
                             </option>
                           ))}
                         </select>
-                        {checked && isProcessWrong && (
-                          <span className="text-[10px] text-rose-600 font-bold whitespace-nowrap">
-                            → {correctStep ? correctStep.process : 'Deadlock'}
+                        {checked && isProcessCorrect && isSelected && (
+                          <span className="text-[10px] text-emerald-700 font-bold whitespace-nowrap bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                            ✓ Valid (Q ≤ W atau Alloc = 0)
+                          </span>
+                        )}
+                        {checked && isProcessWrong && stepVal.errorMessage && (
+                          <span className="text-[10px] text-rose-700 font-bold whitespace-nowrap bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                            ✗ {stepVal.errorMessage}
                           </span>
                         )}
                       </div>
@@ -837,8 +1087,8 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
                             next[si].wAfter[ri] = v;
                             setMarkedSteps(next);
                           }}
-                          correctValue={correctStep ? correctStep.wAfter[ri] : undefined}
-                          checked={checked && !isBlockedSlot}
+                          correctValue={isSelected ? stepVal.expectedW[ri] : undefined}
+                          checked={checked && isSelected}
                         />
                       </td>
                     ))}
@@ -904,6 +1154,401 @@ const DetectionExerciseView: React.FC<{ exercise: DetectionExercise }> = ({ exer
   );
 };
 
+// ═══ DiningPhilosopherExerciseView ═══
+const DiningPhilosopherExerciseView: React.FC<{
+  exercise: DiningPhilosopherExercise;
+}> = ({ exercise }) => {
+  const [userAnswers, setUserAnswers] = useState<Record<string, string | number>>({});
+  const [checked, setChecked] = useState(false);
+  const [showSolution, setShowSolution] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const handleSelectOption = (qid: string, val: string) => {
+    if (checked) return;
+    setUserAnswers((prev) => ({ ...prev, [qid]: val }));
+  };
+
+  const handleNumberChange = (qid: string, val: string) => {
+    if (checked) return;
+    const num = parseInt(val.replace(/[^0-9-]/g, ''));
+    setUserAnswers((prev) => ({
+      ...prev,
+      [qid]: isNaN(num) ? '' : num,
+    }));
+  };
+
+  const handleCheck = () => {
+    setChecked(true);
+  };
+
+  const handleReset = () => {
+    setUserAnswers({});
+    setChecked(false);
+    setShowSolution(false);
+  };
+
+  const handleShowAnswers = () => {
+    const allAns: Record<string, string | number> = {};
+    exercise.questions.forEach((q) => {
+      allAns[q.id] = q.correctAnswer;
+    });
+    setUserAnswers(allAns);
+    setChecked(true);
+    setShowSolution(true);
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(exercise.pseudocode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Score calculation
+  const totalQuestions = exercise.questions.length;
+  const correctCount = checked
+    ? exercise.questions.filter((q) => {
+        const u = userAnswers[q.id];
+        return u !== undefined && String(u).trim() === String(q.correctAnswer).trim();
+      }).length
+    : 0;
+
+  const renderHighlightedLine = (line: string) => {
+    if (line.trim().startsWith('//')) {
+      return <span className="text-emerald-400/90 italic font-mono">{line}</span>;
+    }
+    const tokens = line.split(
+      /(\b(?:semaphore|semWait|semSignal|eat|think|createProcess|while|true|const|int|void|for|main|philosopher)\b)/g
+    );
+    return (
+      <span className="font-mono">
+        {tokens.map((token, i) => {
+          if (/^(semaphore|const|int|void)$/.test(token)) {
+            return (
+              <span key={i} className="text-cyan-400 font-bold">
+                {token}
+              </span>
+            );
+          }
+          if (/^(semWait|semSignal)$/.test(token)) {
+            return (
+              <span key={i} className="text-amber-400 font-bold">
+                {token}
+              </span>
+            );
+          }
+          if (/^(while|for|true)$/.test(token)) {
+            return (
+              <span key={i} className="text-pink-400 font-bold">
+                {token}
+              </span>
+            );
+          }
+          if (/^(eat|think|createProcess|philosopher|main)$/.test(token)) {
+            return (
+              <span key={i} className="text-emerald-300 font-semibold">
+                {token}
+              </span>
+            );
+          }
+          return <span key={i}>{token}</span>;
+        })}
+      </span>
+    );
+  };
+
+  return (
+    <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-200/90 shadow-xl space-y-8">
+      {/* Exercise Header */}
+      <div className="border-b border-gray-100 pb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold uppercase tracking-wider">
+            <span>🍽️</span> Studi Kasus UTS — Dining Philosopher
+          </div>
+          {checked && (
+            <div
+              className={`px-4 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-xs ${
+                correctCount === totalQuestions
+                  ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                  : 'bg-amber-100 text-amber-900 border border-amber-300'
+              }`}
+            >
+              <span>{correctCount === totalQuestions ? '🎉 SEMPURNA!' : '📊 SKOR ANDA:'}</span>
+              <span>
+                {correctCount} / {totalQuestions} Soal Benar
+              </span>
+            </div>
+          )}
+        </div>
+        <h3 className="text-2xl font-black text-gray-900 tracking-tight">{exercise.title}</h3>
+        <p className="text-sm font-semibold text-blue-600 mt-0.5">{exercise.subtitle}</p>
+        <p className="text-xs text-gray-600 mt-2 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200/70">
+          {exercise.contextDescription}
+        </p>
+      </div>
+
+      {/* Code Block with line numbers and copy button */}
+      <div>
+        <div className="flex items-center justify-between bg-slate-900 text-slate-300 px-4 py-2.5 rounded-t-2xl border-b border-slate-800">
+          <div className="flex items-center gap-2 text-xs font-mono">
+            <span className="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+            <span className="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+            <span className="ml-2 font-semibold text-slate-200">pseudocode_dining_philosopher.c</span>
+          </div>
+          <button
+            onClick={handleCopyCode}
+            className="text-xs font-semibold px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+          >
+            {copied ? '✓ Tersalin!' : '📋 Salin Pseudocode'}
+          </button>
+        </div>
+        <div className="font-mono text-xs md:text-sm bg-slate-950 text-slate-100 rounded-b-2xl p-4 overflow-x-auto shadow-inner border-x border-b border-slate-900 max-h-[380px] overflow-y-auto">
+          {exercise.pseudocode.trim().split('\n').map((line, idx) => (
+            <div key={idx} className="flex hover:bg-slate-900/60 px-1 py-0.5 rounded transition-colors">
+              <span className="w-8 select-none text-slate-600 text-right pr-4 shrink-0 font-mono text-xs">
+                {idx + 1}
+              </span>
+              <span className="whitespace-pre">{renderHighlightedLine(line)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Code Breakdown Table (from lecturer's JPEG note) */}
+      <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50">
+        <button
+          onClick={() => setShowBreakdown(!showBreakdown)}
+          className="w-full flex items-center justify-between px-5 py-3 bg-slate-100/80 hover:bg-slate-200/70 transition-colors text-left font-bold text-xs uppercase tracking-wider text-slate-700 cursor-pointer"
+        >
+          <span className="flex items-center gap-2">
+            <span>📋</span> Bedah Baris Perintah Pseudocode (Slide & Catatan Dosen)
+          </span>
+          <span className="text-slate-500 text-sm">{showBreakdown ? '▲ Sembunyikan' : '▼ Tampilkan'}</span>
+        </button>
+        {showBreakdown && (
+          <div className="p-4 overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-200/70 text-slate-700 font-bold border-b border-slate-300">
+                  <th className="py-2.5 px-3 text-left w-1/3">Perintah (Command)</th>
+                  <th className="py-2.5 px-3 text-left">Fungsi & Perilaku Sistem Operasi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 font-normal text-slate-700">
+                {exercise.codeBreakdown.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-white/80 transition-colors">
+                    <td className="py-2 px-3 font-mono font-bold text-blue-900 bg-blue-50/40 rounded-l">
+                      {row.line}
+                    </td>
+                    <td className="py-2 px-3 leading-relaxed">{row.desc}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Interactive Questions Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+          <h4 className="text-lg font-black text-gray-800 flex items-center gap-2">
+            <span>✍️</span> Pertanyaan Analisis Pseudocode UTS
+          </h4>
+          <span className="text-xs text-gray-500 font-medium">
+            Jawab semua sub-pertanyaan lalu klik <b>Periksa Jawaban</b>.
+          </span>
+        </div>
+
+        {exercise.questions.map((q, qIndex) => {
+          const userVal = userAnswers[q.id];
+          const isCorrect = checked && userVal !== undefined && String(userVal).trim() === String(q.correctAnswer).trim();
+          const isIncorrect = checked && (userVal === undefined || String(userVal).trim() !== String(q.correctAnswer).trim());
+
+          return (
+            <div
+              key={q.id}
+              className={`p-5 rounded-2xl border transition-all duration-200 ${
+                isCorrect
+                  ? 'bg-emerald-50/40 border-emerald-300 shadow-xs'
+                  : isIncorrect
+                  ? 'bg-rose-50/40 border-rose-300 shadow-xs'
+                  : 'bg-white border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {/* Question text */}
+              <div className="flex items-start gap-3 mb-3">
+                <span className="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                  {qIndex + 1}
+                </span>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-gray-900 leading-snug">{q.question}</p>
+                </div>
+              </div>
+
+              {/* Multiple Choice Options */}
+              {q.type === 'choice' && q.options && (
+                <div className="space-y-2 mt-3 ml-9">
+                  {q.options.map((opt, optIdx) => {
+                    const isSelected = userVal === opt;
+                    const isOptionCorrect = checked && opt === q.correctAnswer;
+                    const isOptionWrongSelected = checked && isSelected && opt !== q.correctAnswer;
+
+                    return (
+                      <button
+                        key={optIdx}
+                        disabled={checked}
+                        onClick={() => handleSelectOption(q.id, opt)}
+                        className={`w-full text-left p-3 rounded-xl border text-xs leading-relaxed transition-all flex items-start gap-3 cursor-pointer ${
+                          isOptionCorrect
+                            ? 'bg-emerald-100 border-emerald-500 text-emerald-950 font-bold shadow-xs'
+                            : isOptionWrongSelected
+                            ? 'bg-rose-100 border-rose-500 text-rose-950 font-bold'
+                            : isSelected
+                            ? 'bg-blue-50 border-blue-500 text-blue-900 font-bold ring-2 ring-blue-400/30'
+                            : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center text-[10px] shrink-0 mt-0.5 ${
+                            isSelected
+                              ? 'border-blue-600 bg-blue-600 text-white'
+                              : 'border-gray-300 bg-white text-transparent'
+                          }`}
+                        >
+                          ●
+                        </span>
+                        <span className="flex-1">{opt}</span>
+                        {isOptionCorrect && (
+                          <span className="px-2 py-0.5 bg-emerald-600 text-white rounded text-[10px] font-extrabold uppercase shrink-0">
+                            ✓ Kunci
+                          </span>
+                        )}
+                        {isOptionWrongSelected && (
+                          <span className="px-2 py-0.5 bg-rose-600 text-white rounded text-[10px] font-extrabold uppercase shrink-0">
+                            ✗ Pilihan Anda
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Number Input Option */}
+              {q.type === 'number' && (
+                <div className="mt-3 ml-9 flex items-center gap-3">
+                  <span className="text-xs font-bold text-gray-700">Masukkan Angka:</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    disabled={checked}
+                    value={userVal !== undefined ? String(userVal) : ''}
+                    onChange={(e) => handleNumberChange(q.id, e.target.value)}
+                    placeholder="Nilai room"
+                    className={`w-28 px-3 py-1.5 border rounded-xl text-center text-sm font-bold font-mono transition-all ${
+                      isCorrect
+                        ? 'bg-emerald-100 border-emerald-500 text-emerald-900 ring-2 ring-emerald-300'
+                        : isIncorrect
+                        ? 'bg-rose-100 border-rose-500 text-rose-900 ring-2 ring-rose-300'
+                        : 'bg-white border-gray-300 text-gray-800 focus:ring-2 focus:ring-blue-500'
+                    }`}
+                  />
+                  {isCorrect && (
+                    <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                      ✓ Benar! Nilai kapasitas tepat.
+                    </span>
+                  )}
+                  {isIncorrect && (
+                    <span className="text-xs font-bold text-rose-600 flex items-center gap-1">
+                      ✗ Jawaban yang benar adalah: {q.correctAnswer}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Explanation (revealed when checked) */}
+              {checked && (
+                <div className="mt-4 ml-9 p-3.5 bg-amber-50/80 border border-amber-200/90 rounded-xl text-xs text-amber-950 leading-relaxed shadow-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-900 mb-1">
+                    <span>💡</span>
+                    <span>Penjelasan Konsep & Logika Jawaban:</span>
+                  </div>
+                  <p>{q.explanation}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-3 flex-wrap items-center pt-2 border-t border-gray-100">
+        {!checked && (
+          <button
+            onClick={handleCheck}
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer"
+          >
+            ✓ Periksa Jawaban (Check)
+          </button>
+        )}
+        <button
+          onClick={handleReset}
+          className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm transition-colors cursor-pointer"
+        >
+          ↺ Reset Jawaban
+        </button>
+        {!checked && (
+          <button
+            onClick={handleShowAnswers}
+            className="px-5 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-xl font-semibold text-sm transition-colors cursor-pointer"
+          >
+            ★ Tampilkan Kunci Jawaban
+          </button>
+        )}
+        {checked && (
+          <button
+            onClick={() => setShowSolution(!showSolution)}
+            className="px-5 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-xl font-bold text-sm transition-colors flex items-center gap-1.5 cursor-pointer"
+          >
+            {showSolution ? '▲ Sembunyikan Kotretan & Analisis' : '▼ Lihat Analisis Mendalam & Teori Coffman'}
+          </button>
+        )}
+      </div>
+
+      {/* Full Kotretan & Coffman Theory Panel */}
+      {checked && showSolution && (
+        <div className="p-6 bg-slate-900 text-slate-100 rounded-2xl border border-slate-800 space-y-5 animate-in fade-in duration-300">
+          <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+            <span className="text-xl">📚</span>
+            <h4 className="text-base font-bold text-amber-400">
+              Rangkuman Kotretan & Bukti Matematis / Teoretis UTS
+            </h4>
+          </div>
+          <div className="space-y-4 text-xs md:text-sm">
+            {exercise.fullKotretan.map((section, sIdx) => (
+              <div key={sIdx} className="bg-slate-950/70 p-4 rounded-xl border border-slate-800/80">
+                <h5 className="font-bold text-emerald-400 mb-2 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
+                  {section.title}
+                </h5>
+                <ul className="space-y-1.5 text-slate-300 font-mono text-xs">
+                  {section.steps.map((st, i) => (
+                    <li key={i} className="leading-relaxed">
+                      {st}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ═══ Main ExerciseView Component with Sub-Tabs ═══
 export const ExerciseView: React.FC = () => {
   const [selectedIdx, setSelectedIdx] = useState(0);
@@ -916,10 +1561,10 @@ export const ExerciseView: React.FC = () => {
       {/* Title & subtitle */}
       <div className="text-center mb-8">
         <h2 className="text-3xl font-black text-gray-900 tracking-tight flex items-center justify-center gap-2">
-          <span>📝</span> Modul Latihan Soal Deadlock
+          <span>📝</span> Modul Latihan Soal Deadlock & Kasus UTS
         </h2>
         <p className="text-gray-500 text-sm mt-1">
-          Lengkapi tabel perhitungan matriks, tentukan urutan eksekusi proses, dan periksa kebenaran jawabanmu secara interaktif.
+          Lengkapi tabel perhitungan matriks Banker's Algorithm, Detection, dan bedah analisis Pseudocode Dining Philosopher UTS secara interaktif.
         </p>
       </div>
 
@@ -938,7 +1583,11 @@ export const ExerciseView: React.FC = () => {
                 : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            {ex.type === 'avoidance' || ex.type === 'avoidance-multi' ? '🔒 ' : '🔍 '}
+            {ex.type === 'avoidance' || ex.type === 'avoidance-multi'
+              ? '🔒 '
+              : ex.type === 'detection'
+              ? '🔍 '
+              : '🍽️ '}
             {ex.title}
           </button>
         ))}
@@ -1000,6 +1649,13 @@ export const ExerciseView: React.FC = () => {
 
       {exercise.type === 'detection' && (
         <DetectionExerciseView key={selectedIdx} exercise={exercise} />
+      )}
+
+      {exercise.type === 'dining-philosopher' && (
+        <DiningPhilosopherExerciseView
+          key={selectedIdx}
+          exercise={exercise as DiningPhilosopherExercise}
+        />
       )}
     </div>
   );

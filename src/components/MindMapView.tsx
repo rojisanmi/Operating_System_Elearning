@@ -207,7 +207,7 @@ export const MindMapView: React.FC = () => {
   return (
     <div
       className="relative select-none"
-      style={{ width: 3600, height: 1650 }}
+      style={{ width: 3600, height: 2260 }}
     >
       {/* ═══════════════════════════════════════════════════════
           SVG CONNECTORS & ARROWS LAYER
@@ -215,7 +215,7 @@ export const MindMapView: React.FC = () => {
       <svg
         className="absolute inset-0 pointer-events-none"
         width={3600}
-        height={1650}
+        height={2260}
         style={{ overflow: 'visible' }}
       >
         <defs>
@@ -345,6 +345,17 @@ export const MindMapView: React.FC = () => {
         <line x1="2285" y1="1315" x2="2285" y2="1360" stroke="#059669" strokeWidth={2} strokeDasharray="6,4" markerEnd="url(#arrow-green)" />
         {/* Strategi card right to Istilah card */}
         <line x1="2510" y1="1435" x2="2560" y2="1435" stroke="#059669" strokeWidth={2} strokeDasharray="6,4" markerEnd="url(#arrow-green)" />
+
+        {/* ── 11. Studi Kasus Dining Philosopher Connectors ── */}
+        {/* Connection: Circular Wait illustration card down to Dining Philosopher UTS Boundary */}
+        <path
+          d="M 1080 1280 C 1080 1320, 855 1320, 855 1360"
+          fill="none"
+          stroke="#9333ea"
+          strokeWidth={2.5}
+          strokeDasharray="6,4"
+          markerEnd="url(#arrow-purple)"
+        />
       </svg>
 
       {/* ═══════════════════════════════════════════════════════
@@ -1417,6 +1428,343 @@ export const MindMapView: React.FC = () => {
           <div><b>Q</b> = Request Matrix</div>
           <div><b>R</b> = Resource Vector</div>
           <div><b>W</b> = Available Vector</div>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════
+          ZONE 4: BOUNDARY MATERI TAMBAHAN UTS — DINING PHILOSOPHER
+          (E. W. Dijkstra — Slide Kuliah & Catatan Pseudocode Dosen)
+          ═══════════════════════════════════════════════════════ */}
+
+      {/* Label Badge on Circular Wait -> Dining Philosopher connector */}
+      <div
+        className="absolute bg-white text-purple-900 border-2 border-purple-400 rounded-full px-3.5 py-1 text-xs font-black shadow-md text-center z-20"
+        style={{ left: 935, top: 1302 }}
+      >
+        ⚡ Studi Kasus Nyata Circular Wait
+      </div>
+
+      {/* ── BIG BOUNDARY CONTAINER FOR MATERI TAMBAHAN UTS ── */}
+      <div
+        className="absolute bg-gradient-to-b from-purple-50/70 via-white/95 to-purple-50/50 border-2 border-dashed border-purple-400 rounded-[32px] p-6 shadow-xl shadow-purple-500/5 select-none"
+        style={{ left: 30, top: 1360, width: 1650, height: 830 }}
+      >
+        {/* Boundary Header Bar */}
+        <div className="flex items-center justify-between border-b border-purple-200/80 pb-4 mb-5">
+          <div className="flex items-center gap-3">
+            <span className="px-3.5 py-1 rounded-full bg-purple-700 text-white text-xs font-black tracking-wider uppercase shadow-xs">
+              🏷️ MATERI TAMBAHAN UTS
+            </span>
+            <div>
+              <h3 className="text-xl font-black text-purple-950 tracking-tight flex items-center gap-2">
+                <span>🍽️</span> Studi Kasus Deadlock: Dining Philosopher Problem
+              </h3>
+              <p className="text-xs text-purple-800 font-medium mt-0.5">
+                Penerapan Nyata 4 Kondisi Coffman (Fokus Circular Wait), Kelemahan Solusi Naif, dan Solusi Semaphore UTS (E. W. Dijkstra)
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold px-3 py-1 rounded-xl bg-purple-100/90 text-purple-900 border border-purple-300">
+              📝 Fokus Soal: Analisis Pseudocode
+            </span>
+            <span className="text-[11px] font-bold px-3 py-1 rounded-xl bg-emerald-100/90 text-emerald-900 border border-emerald-300">
+              🛡️ Solusi: Semaphore Room (N - 1) & Asimetris
+            </span>
+          </div>
+        </div>
+
+        {/* 3 Columns Layout with explicit heights and zero overlap */}
+        <div className="flex gap-4 items-stretch h-[720px]">
+          {/* ── COLUMN 1: Meja Bundar (N = 5) ── */}
+          <div className="w-[470px] bg-white border-2 border-purple-200 rounded-3xl p-4 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between border-b border-purple-100 pb-2">
+              <div className="font-extrabold text-xs text-purple-950 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🍽️</span> 1. Visualisasi Meja Bundar (N = 5)
+              </div>
+              <span className="text-[10px] font-black bg-purple-100 text-purple-800 px-2.5 py-0.5 rounded-full border border-purple-200">
+                5 Shared Resources
+              </span>
+            </div>
+
+            {/* SVG Meja Bundar */}
+            <div className="relative w-full h-[470px] my-1">
+              <svg className="w-full h-full" viewBox="0 0 440 430">
+                <defs>
+                  <radialGradient id="tableGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#fef3c7" />
+                    <stop offset="85%" stopColor="#fde68a" />
+                    <stop offset="100%" stopColor="#d97706" />
+                  </radialGradient>
+                </defs>
+
+                {/* Outer Room Boundary */}
+                <circle cx="220" cy="215" r="175" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="5,5" />
+                <text x="220" y="24" textAnchor="middle" fill="#64748b" fontWeight="800" fontSize="11">
+                  Semaphore room = 4 (Kapasitas Maksimal N - 1)
+                </text>
+
+                {/* Dining Table */}
+                <circle cx="220" cy="215" r="115" fill="url(#tableGrad)" stroke="#b45309" strokeWidth="3" />
+
+                {/* Center Spaghetti Dish */}
+                <circle cx="220" cy="215" r="40" fill="#ffffff" stroke="#e2e8f0" strokeWidth="2" />
+                <circle cx="220" cy="215" r="32" fill="#fef2f2" stroke="#fca5a5" strokeWidth="1" />
+                <text x="220" y="211" textAnchor="middle" fill="#991b1b" fontWeight="900" fontSize="12">SPAGETI</text>
+                <text x="220" y="225" textAnchor="middle" fill="#b91c1c" fontWeight="700" fontSize="8.5">(Shared Disk)</text>
+
+                {/* 5 Plates on table in front of each philosopher */}
+                <circle cx="220" cy="140" r="14" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+                <circle cx="282" cy="182" r="14" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+                <circle cx="258" cy="260" r="14" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+                <circle cx="182" cy="260" r="14" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+                <circle cx="158" cy="182" r="14" fill="#ffffff" stroke="#cbd5e1" strokeWidth="1.5" />
+
+                {/* 5 Philosophers */}
+                {/* P0 (top) */}
+                <g>
+                  <circle cx="220" cy="62" r="23" fill="#eff6ff" stroke="#2563eb" strokeWidth="2.5" />
+                  <text x="220" y="66" textAnchor="middle" fill="#1e40af" fontWeight="900" fontSize="13">P0</text>
+                </g>
+                {/* P1 (top-right) */}
+                <g>
+                  <circle cx="340" cy="148" r="23" fill="#eff6ff" stroke="#2563eb" strokeWidth="2.5" />
+                  <text x="340" y="152" textAnchor="middle" fill="#1e40af" fontWeight="900" fontSize="13">P1</text>
+                </g>
+                {/* P2 (bottom-right) */}
+                <g>
+                  <circle cx="295" cy="310" r="23" fill="#eff6ff" stroke="#2563eb" strokeWidth="2.5" />
+                  <text x="295" y="314" textAnchor="middle" fill="#1e40af" fontWeight="900" fontSize="13">P2</text>
+                </g>
+                {/* P3 (bottom-left) */}
+                <g>
+                  <circle cx="145" cy="310" r="23" fill="#eff6ff" stroke="#2563eb" strokeWidth="2.5" />
+                  <text x="145" y="314" textAnchor="middle" fill="#1e40af" fontWeight="900" fontSize="13">P3</text>
+                </g>
+                {/* P4 (top-left) */}
+                <g>
+                  <circle cx="100" cy="148" r="23" fill="#eff6ff" stroke="#2563eb" strokeWidth="2.5" />
+                  <text x="100" y="152" textAnchor="middle" fill="#1e40af" fontWeight="900" fontSize="13">P4</text>
+                </g>
+
+                {/* 5 Forks (F0 - F4) */}
+                {/* F0 (between P4 & P0) */}
+                <g>
+                  <rect x="150" y="115" width="24" height="20" rx="4" fill="#fef2f2" stroke="#dc2626" strokeWidth="1.5" />
+                  <text x="162" y="129" textAnchor="middle" fill="#dc2626" fontWeight="900" fontSize="10">F0</text>
+                </g>
+                {/* F1 (between P0 & P1) */}
+                <g>
+                  <rect x="266" y="115" width="24" height="20" rx="4" fill="#fef2f2" stroke="#dc2626" strokeWidth="1.5" />
+                  <text x="278" y="129" textAnchor="middle" fill="#dc2626" fontWeight="900" fontSize="10">F1</text>
+                </g>
+                {/* F2 (between P1 & P2) */}
+                <g>
+                  <rect x="295" y="222" width="24" height="20" rx="4" fill="#fef2f2" stroke="#dc2626" strokeWidth="1.5" />
+                  <text x="307" y="236" textAnchor="middle" fill="#dc2626" fontWeight="900" fontSize="10">F2</text>
+                </g>
+                {/* F3 (between P2 & P3) */}
+                <g>
+                  <rect x="208" y="278" width="24" height="20" rx="4" fill="#fef2f2" stroke="#dc2626" strokeWidth="1.5" />
+                  <text x="220" y="292" textAnchor="middle" fill="#dc2626" fontWeight="900" fontSize="10">F3</text>
+                </g>
+                {/* F4 (between P3 & P4) */}
+                <g>
+                  <rect x="121" y="222" width="24" height="20" rx="4" fill="#fef2f2" stroke="#dc2626" strokeWidth="1.5" />
+                  <text x="133" y="236" textAnchor="middle" fill="#dc2626" fontWeight="900" fontSize="10">F4</text>
+                </g>
+
+                {/* Circular Wait curved red dashed arrows (Clockwise) */}
+                <path d="M 198 56 C 178 58, 162 82, 162 112" fill="none" stroke="#dc2626" strokeWidth="1.75" strokeDasharray="3,2" markerEnd="url(#rag-arr-red)" />
+                <path d="M 242 56 C 262 58, 278 82, 278 112" fill="none" stroke="#dc2626" strokeWidth="1.75" strokeDasharray="3,2" markerEnd="url(#rag-arr-red)" />
+                <path d="M 340 174 C 340 200, 324 220, 320 226" fill="none" stroke="#dc2626" strokeWidth="1.75" strokeDasharray="3,2" markerEnd="url(#rag-arr-red)" />
+                <path d="M 275 324 C 255 324, 236 308, 234 300" fill="none" stroke="#dc2626" strokeWidth="1.75" strokeDasharray="3,2" markerEnd="url(#rag-arr-red)" />
+                <path d="M 125 300 C 115 270, 118 245, 120 244" fill="none" stroke="#dc2626" strokeWidth="1.75" strokeDasharray="3,2" markerEnd="url(#rag-arr-red)" />
+
+                {/* Caption at bottom of SVG */}
+                <text x="220" y="415" textAnchor="middle" fill="#dc2626" fontWeight="900" fontSize="11">
+                  ⚠️ Skenario Naif: Semua serentak ambil garpu kiri → Terjadi Circular Wait!
+                </text>
+              </svg>
+            </div>
+
+            <div className="bg-purple-50 border border-purple-200 rounded-2xl p-3 text-[11px] text-purple-950 leading-relaxed font-semibold">
+              <b>Aturan Main:</b> Setiap filsuf butuh <b>2 garpu</b> (kiri & kanan) untuk makan. Garpu bersifat <i>non-shareable</i> (Mutual Exclusion).
+            </div>
+          </div>
+
+          {/* ── COLUMN 2: Analogi & Solusi (Stacked, Zero Overlap) ── */}
+          <div className="w-[530px] flex flex-col justify-between h-full">
+            {/* Card 2: Pemetaan Analogi */}
+            <div className="bg-white border-2 border-purple-200 rounded-3xl p-4 shadow-sm flex flex-col justify-between h-[325px]">
+              <div>
+                <div className="font-extrabold text-xs text-purple-950 mb-2 uppercase tracking-wider flex items-center justify-between border-b border-gray-100 pb-2">
+                  <span className="flex items-center gap-1.5">
+                    <span>🔄</span> 2. Pemetaan Analogi Filsuf ↔ Konsep OS
+                  </span>
+                  <span className="text-[10px] bg-blue-100 text-blue-800 font-extrabold px-2.5 py-0.5 rounded-full border border-blue-200">
+                    Konsep UTS
+                  </span>
+                </div>
+
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-purple-50/80 text-purple-950 border-b border-purple-200 font-extrabold">
+                      <th className="py-1.5 px-3 text-left w-2/5">Analogi Masalah Filsuf</th>
+                      <th className="py-1.5 px-3 text-left">Konsep Nyata Sistem Operasi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-[11px] text-gray-800">
+                    <tr>
+                      <td className="py-1.5 px-3 font-bold text-purple-950">Filsuf (P0 .. P4)</td>
+                      <td className="py-1.5 px-3">Proses Konkuren / Thread di CPU</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-bold text-purple-950">Berpikir (think)</td>
+                      <td className="py-1.5 px-3">Komputasi independen (tanpa resource bersama)</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-bold text-purple-950">Mengambil Garpu</td>
+                      <td className="py-1.5 px-3">Request & lock shared resource (semWait)</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-bold text-purple-950">Makan (eat)</td>
+                      <td className="py-1.5 px-3">Critical Section (butuh 2 resource sekaligus)</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-3 font-bold text-purple-950">Meletakkan Garpu</td>
+                      <td className="py-1.5 px-3">Release resource & wake up wait queue (semSignal)</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-[10.5px] text-slate-800 leading-snug">
+                <b>💡 Kunci Teori Coffman:</b> Deadlock terjadi JIKA DAN HANYA JIKA ke-4 kondisi (Mutual Exclusion, Hold and Wait, No Preemption, Circular Wait) terpenuhi bersamaan.
+              </div>
+            </div>
+
+            {/* Card 3: 2 Solusi Deadlock */}
+            <div className="bg-white border-2 border-purple-200 rounded-3xl p-4 shadow-sm flex flex-col justify-between h-[375px]">
+              <div>
+                <div className="font-extrabold text-xs text-purple-950 mb-2 uppercase tracking-wider flex items-center justify-between border-b border-gray-100 pb-2">
+                  <span className="flex items-center gap-1.5">
+                    <span>🛡️</span> 3. Dua Solusi Pencegahan Deadlock
+                  </span>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-900 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-300">
+                    Bebas Deadlock
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs mt-1">
+                  {/* Solusi 1 */}
+                  <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-2xl flex flex-col justify-between">
+                    <div>
+                      <div className="font-black text-blue-950 text-xs mb-1.5 flex items-center gap-1">
+                        <span>🚪</span> Solusi 1: Semaphore Room (N - 1)
+                      </div>
+                      <p className="text-[10.5px] text-blue-900 leading-relaxed">
+                        Inisialisasi <code className="bg-blue-100 px-1 py-0.5 rounded font-bold">room = 4</code>.
+                        Membatasi maks 4 filsuf yang boleh mencoba mengambil garpu.
+                      </p>
+                    </div>
+                    <div className="mt-2.5 text-[10px] bg-white p-2 rounded-xl border border-blue-200 font-bold text-blue-900 leading-snug shadow-xs">
+                      💡 <b>Pigeonhole:</b> 4 filsuf & 5 garpu → minimal 1 filsuf pasti dapat 2 garpu & makan!
+                    </div>
+                  </div>
+
+                  {/* Solusi 2 */}
+                  <div className="p-3 bg-purple-50/80 border border-purple-200 rounded-2xl flex flex-col justify-between">
+                    <div>
+                      <div className="font-black text-purple-950 text-xs mb-1.5 flex items-center gap-1">
+                        <span>⚖️</span> Solusi 2: Urutan Asimetris
+                      </div>
+                      <p className="text-[10.5px] text-purple-900 leading-relaxed">
+                        Filsuf genap (0,2,4) ambil garpu kiri lalu kanan.
+                        Filsuf ganjil (1,3) ambil garpu kanan lalu kiri.
+                      </p>
+                    </div>
+                    <div className="mt-2.5 text-[10px] bg-white p-2 rounded-xl border border-purple-200 font-bold text-purple-900 leading-snug shadow-xs">
+                      💡 <b>Pecah Simetri:</b> Tetangga ganjil/genap memperebutkan garpu yang sama lebih awal!
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-2xl text-[10.5px] text-amber-950 leading-snug">
+                <b>📌 Alternatif Solusi Lain:</b> Passing Token / Pelayan (Chandy-Misra) atau mewajibkan filsuf mengambil kedua garpu secara atomik sekaligus (Critical Section).
+              </div>
+            </div>
+          </div>
+
+          {/* ── COLUMN 3: Pseudocode & Bedah Baris UTS ── */}
+          <div className="w-[580px] bg-white border-2 border-purple-200 rounded-3xl p-4 shadow-sm flex flex-col justify-between h-full">
+            <div>
+              <div className="flex items-center justify-between border-b border-purple-100 pb-2 mb-2">
+                <div className="font-extrabold text-xs text-purple-950 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>📜</span> 4. Pseudocode Solusi Semaphore & Analisis Baris
+                </div>
+                <span className="text-[10px] font-black bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full border border-amber-300">
+                  Fokus Soal UTS Dosen
+                </span>
+              </div>
+
+              {/* Pseudocode snippet with syntax highlighting */}
+              <div className="bg-slate-950 text-slate-100 rounded-2xl p-3 font-mono text-[11px] leading-relaxed shadow-inner border border-slate-800 overflow-x-auto">
+                <div><span className="text-cyan-400 font-bold">const int</span> N = <span className="text-purple-400 font-bold">5</span>;</div>
+                <div><span className="text-cyan-400 font-bold">semaphore</span> fork[<span className="text-purple-400 font-bold">5</span>] = &#123;<span className="text-purple-400">1, 1, 1, 1, 1</span>&#125;;</div>
+                <div><span className="text-cyan-400 font-bold">semaphore</span> room = <span className="text-amber-400 font-bold">4</span>; <span className="text-slate-400 italic">// Kunci N-1 (Pencegahan Deadlock)</span></div>
+                <div className="text-cyan-400 font-bold mt-1">void <span className="text-emerald-300">philosopher</span>(int i) &#123;</div>
+                <div className="pl-3"><span className="text-pink-400 font-bold">while</span> (<span className="text-pink-400">true</span>) &#123;</div>
+                <div className="pl-6 text-slate-300">think();</div>
+                <div className="pl-6 text-amber-400 font-bold">semWait(room); <span className="text-slate-400 font-normal italic">// [Baris 1] Batasi maks 4 filsuf</span></div>
+                <div className="pl-6 text-amber-400 font-bold">semWait(fork[i]); <span className="text-slate-400 font-normal italic">// [Baris 2] Ambil garpu kiri</span></div>
+                <div className="pl-6 text-amber-400 font-bold">semWait(fork[(i + 1) % N]); <span className="text-slate-400 font-normal italic">// [Baris 3] Ambil garpu kanan</span></div>
+                <div className="pl-6 text-emerald-300 font-semibold">eat();</div>
+                <div className="pl-6 text-amber-400 font-bold">semSignal(fork[(i + 1) % N]); <span className="text-slate-400 font-normal italic">// [Baris 4] Lepas garpu kanan</span></div>
+                <div className="pl-6 text-amber-400 font-bold">semSignal(fork[i]); <span className="text-slate-400 font-normal italic">// [Baris 5] Lepas garpu kiri</span></div>
+                <div className="pl-6 text-amber-400 font-bold">semSignal(room); <span className="text-slate-400 font-normal italic">// [Baris 6] Izinkan filsuf lain masuk</span></div>
+                <div className="pl-3">&#125;</div>
+                <div>&#125;</div>
+              </div>
+
+              {/* Table: Command <-> Function (matching explanation jpeg, NO SCROLLBAR!) */}
+              <div className="border border-slate-200 rounded-2xl overflow-hidden mt-2.5">
+                <div className="bg-slate-100 px-3 py-1 text-[10px] font-extrabold text-slate-700 uppercase tracking-wider border-b border-slate-200">
+                  Bedah Fungsi Baris (Catatan Slide Dosen):
+                </div>
+                <table className="w-full text-[10.5px]">
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                    <tr>
+                      <td className="py-1.5 px-2.5 font-mono font-bold text-blue-900 bg-blue-50/50 w-2/5">semWait(room)</td>
+                      <td className="py-1.5 px-2.5">Memeriksa izin masuk. Jika 4 sudah di dalam, filsuf ke-5 antre di wait queue.</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-2.5 font-mono font-bold text-blue-900 bg-blue-50/50">semWait(fork[i])</td>
+                      <td className="py-1.5 px-2.5">Mengambil garpu kiri. Kunci resource garpu agar tidak diambil tetangga.</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-2.5 font-mono font-bold text-blue-900 bg-blue-50/50">semWait(fork[(i+1)%N])</td>
+                      <td className="py-1.5 px-2.5">Mengambil garpu kanan. Jika sedang dipakai tetangga, proses tertahan menunggu.</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-2.5 font-mono font-bold text-blue-900 bg-blue-50/50">semSignal(fork[..])</td>
+                      <td className="py-1.5 px-2.5">Meletakkan garpu kembali ke meja, membuat nilainya kembali 1.</td>
+                    </tr>
+                    <tr>
+                      <td className="py-1.5 px-2.5 font-mono font-bold text-blue-900 bg-blue-50/50">semSignal(room)</td>
+                      <td className="py-1.5 px-2.5">Menaikkan counter kapasitas, mengizinkan 1 filsuf yang antre untuk masuk.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Bottom Alert Warning */}
+            <div className="bg-amber-50 border border-amber-300 rounded-2xl p-2.5 text-[11px] text-amber-950 leading-snug">
+              <b>⚠️ Jebakan UTS:</b> Jika nilai <code className="bg-amber-100 px-1.5 py-0.5 rounded font-black text-amber-900">room = 5</code>, maka kelima filsuf dapat masuk dan serentak mengambil garpu pertama sebelum meminta garpu kedua → <b>DEADLOCK MUTLAK!</b>
+            </div>
+          </div>
         </div>
       </div>
     </div>

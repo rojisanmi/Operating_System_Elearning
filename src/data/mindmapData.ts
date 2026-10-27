@@ -505,6 +505,45 @@ export const nodeDescriptions: Record<string, string[]> = {
     'Kondisi 1-3 mungkin menyebabkan deadlock, mungkin tidak.',
     'Kondisi 4 (Circular Wait) yang menjamin terjadinya deadlock.',
   ],
+  'dining-philosopher': [
+    'Studi Kasus Klasik: Multiple processes berkompetisi untuk resource terbatas (E. Dijkstra).',
+    '5 filsuf duduk melingkar dengan 5 garpu di antara mereka.',
+    'Setiap filsuf butuh DUA garpu (kiri & kanan) untuk makan.',
+  ],
+  'dining-analogy': [
+    'Pemetaan Analogi OS:',
+    '• Filsuf ↔ Proses',
+    '• Berpikir ↔ Eksekusi mandiri tanpa resource',
+    '• Ambil Garpu ↔ Request / Akses resource',
+    '• Makan ↔ Eksekusi dengan 2 resource',
+    '• Taruh Garpu ↔ Release resource',
+  ],
+  'dining-deadlock': [
+    'Penyebab Deadlock pada Solusi Naif:',
+    'Jika ke-5 filsuf mengambil garpu kiri secara bersamaan, setiap filsuf memegang 1 garpu dan menunggu garpu kanan tetangganya.',
+    'Terbentuk siklus Circular Wait tertutup → DEADLOCK (semua terblokir selamanya).',
+  ],
+  'dining-room-solution': [
+    'Solusi 1: Batasi ke N-1 Filsuf (semaphore room = 4)',
+    'Hanya maksimal 4 filsuf yang diizinkan mencoba mengambil garpu bersamaan.',
+    'Pigeonhole Principle: Dari 5 garpu untuk maksimal 4 orang, dijamin minimal 1 filsuf dapat 2 garpu.',
+    'Memutus kondisi Circular Wait!',
+  ],
+  'dining-asymmetric': [
+    'Solusi 2: Pendekatan Asimetris (Ganjil - Genap)',
+    'Filsuf ganjil mengambil garpu kiri dulu, baru kanan.',
+    'Filsuf genap mengambil garpu kanan dulu, baru kiri.',
+    'Memutus Circular Wait tanpa memerlukan semaphore room.',
+  ],
+  'dining-pseudocode': [
+    'Analisis Pseudocode Semaphore:',
+    '• fork[5] = {1,1,1,1,1} : 5 binary semaphore untuk garpu',
+    '• room = 4 : counting semaphore pembatas ruangan',
+    '• semWait(room) : minta izin masuk ruangan',
+    '• semWait(fork[i]) & semWait(fork[(i+1)%5]) : ambil 2 garpu',
+    '• eat() : makan setelah pegang 2 garpu',
+    '• semSignal(fork...) & semSignal(room) : kembalikan garpu & izin',
+  ],
 };
 
 // ── RAG Diagram data ─────────────────────────────────────────
