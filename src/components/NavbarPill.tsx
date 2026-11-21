@@ -3,15 +3,40 @@ import React from 'react';
 interface NavbarPillProps {
   activeTab: 'mindmap' | 'exercises';
   onTabChange: (tab: 'mindmap' | 'exercises') => void;
+  materialLabel?: string;
+  onBack?: () => void;
 }
 
-export const NavbarPill: React.FC<NavbarPillProps> = ({ activeTab, onTabChange }) => {
+export const NavbarPill: React.FC<NavbarPillProps> = ({
+  activeTab,
+  onTabChange,
+  materialLabel = 'Deadlock Board',
+  onBack,
+}) => {
   return (
     <header
       className="fixed top-5 left-1/2 -translate-x-1/2 select-none pointer-events-auto"
       style={{ zIndex: 9999 }}
     >
       <div className="flex items-center gap-3 bg-white/95 backdrop-blur-2xl border border-gray-300 rounded-full px-3.5 py-1.5 shadow-xl shadow-black/10">
+        {/* Back button */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center justify-center w-7 h-7 rounded-full hover:bg-gray-100 transition-colors cursor-pointer text-gray-500 hover:text-gray-900 shrink-0"
+            title="Kembali ke Pilihan Materi"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+        )}
+
         {/* Brand / Logo badge */}
         <div className="flex items-center gap-2 pl-1 pr-1 border-r border-gray-200">
           <img
@@ -23,7 +48,7 @@ export const NavbarPill: React.FC<NavbarPillProps> = ({ activeTab, onTabChange }
             Responsi Sisop
           </span>
           <span className="bg-blue-50 text-blue-700 text-[10px] font-extrabold px-1.5 py-0.5 rounded-md border border-blue-200/60 ml-0.5">
-            Deadlock Board
+            {materialLabel}
           </span>
         </div>
 

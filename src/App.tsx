@@ -1,14 +1,20 @@
 import React, { useState, useCallback } from 'react';
+import LandingPage from './components/LandingPage';
 import NavbarPill from './components/NavbarPill';
 import BoardCanvas from './components/BoardCanvas';
 import FloatingToolbar from './components/FloatingToolbar';
 import MindMapView from './components/MindMapView';
 import ExerciseView from './components/ExerciseView';
+import MemoryMindMapView from './components/MemoryMindMapView';
+import MemoryExerciseView from './components/MemoryExerciseView';
 
 const MINDMAP_DEFAULT_TRANSFORM = { x: 30, y: 25, scale: 0.58 };
 const EXERCISE_DEFAULT_TRANSFORM = { x: 40, y: 20, scale: 0.92 };
 
+type Page = 'landing' | 'deadlock' | 'memory';
+
 export const App: React.FC = () => {
+  const [currentPage, setCurrentPage] = useState<Page>('landing');
   const [activeTab, setActiveTab] = useState<'mindmap' | 'exercises'>('mindmap');
   const [highlighterActive, setHighlighterActive] = useState(false);
   const [highlighterColor, setHighlighterColor] = useState('#facc15');
@@ -47,10 +53,47 @@ export const App: React.FC = () => {
     }
   }, [activeTab]);
 
+  const handleSelectMaterial = useCallback((material: 'deadlock' | 'memory') => {
+    setCurrentPage(material);
+    setActiveTab('mindmap');
+    setTransform(MINDMAP_DEFAULT_TRANSFORM);
+    setHighlighterActive(false);
+    setClearTrigger(0);
+  }, []);
+
+  const handleBack = useCallback(() => {
+    setCurrentPage('landing');
+    setActiveTab('mindmap');
+    setTransform(MINDMAP_DEFAULT_TRANSFORM);
+    setHighlighterActive(false);
+  }, []);
+
+  // Landing page
+  if (currentPage === 'landing') {
+    return <LandingPage onSelectMaterial={handleSelectMaterial} />;
+  }
+
+  // Material label for navbar
+  const materialLabel =
+    currentPage === 'deadlock' ? 'Deadlock Board' : 'Memori Board';
+
+  // Determine which content to render
+  const renderContent = () => {
+    if (currentPage === 'deadlock') {
+      return activeTab === 'mindmap' ? <MindMapView /> : <ExerciseView />;
+    }
+    return activeTab === 'mindmap' ? <MemoryMindMapView /> : <MemoryExerciseView />;
+  };
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-gray-50 select-none">
       {/* Top Floating Pill Navigation */}
-      <NavbarPill activeTab={activeTab} onTabChange={handleTabChange} />
+      <NavbarPill
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        materialLabel={materialLabel}
+        onBack={handleBack}
+      />
 
       {/* Floating Toolbar (Highlighter & Zoom Controls) */}
       <FloatingToolbar
@@ -73,7 +116,7 @@ export const App: React.FC = () => {
         onTransformChange={setTransform}
         onFitToScreen={handleFitToScreen}
       >
-        {activeTab === 'mindmap' ? <MindMapView /> : <ExerciseView />}
+        {renderContent()}
       </BoardCanvas>
     </div>
   );
