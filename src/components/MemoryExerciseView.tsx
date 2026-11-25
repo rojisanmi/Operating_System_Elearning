@@ -312,7 +312,7 @@ export const MemoryExerciseView: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <InputField
               label="1. Alamat Logika 2050 dalam Biner 16-Bit:"
-              placeholder="Contoh: 0000 1000 0000 0010"
+              placeholder="Contoh: 0001 0010 0011 0100"
               value={s1Binary}
               onChange={setS1Binary}
               correctValue="0000100000000010"
@@ -322,7 +322,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="2. Panjang Bit Offset (Ukuran Page 2 KB):"
-              placeholder="Contoh: 11"
+              placeholder="Contoh: 10"
               value={s1OffsetBits}
               onChange={setS1OffsetBits}
               correctValue={11}
@@ -332,7 +332,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="3. Panjang Bit No. Page:"
-              placeholder="Contoh: 5"
+              placeholder="Contoh: 6"
               value={s1PageBits}
               onChange={setS1PageBits}
               correctValue={5}
@@ -342,7 +342,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="4. Nomor Page (Nilai Desimal):"
-              placeholder="Contoh: 1"
+              placeholder="Contoh: 3"
               value={s1PageNum}
               onChange={setS1PageNum}
               correctValue={1}
@@ -352,7 +352,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="5. Nilai Offset (Nilai Desimal):"
-              placeholder="Contoh: 2"
+              placeholder="Contoh: 16"
               value={s1OffsetVal}
               onChange={setS1OffsetVal}
               correctValue={2}
@@ -454,7 +454,7 @@ export const MemoryExerciseView: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <InputField
               label="1. Pengalamatan Bit Sistem (Memori 64 KB):"
-              placeholder="Contoh: 16"
+              placeholder="Contoh: 32"
               value={s2AddrBits}
               onChange={setS2AddrBits}
               correctValue={16}
@@ -464,7 +464,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="2. Alamat Logika 2050 dalam Biner 16-Bit:"
-              placeholder="Contoh: 0000 1000 0000 0010"
+              placeholder="Contoh: 0001 0010 0011 0100"
               value={s2Binary}
               onChange={setS2Binary}
               correctValue="0000100000000010"
@@ -474,7 +474,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="3. Panjang Bit Offset (Ukuran Page 4 KB):"
-              placeholder="Contoh: 12"
+              placeholder="Contoh: 10"
               value={s2OffsetBits}
               onChange={setS2OffsetBits}
               correctValue={12}
@@ -484,7 +484,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="4. Panjang Bit No. Page:"
-              placeholder="Contoh: 4"
+              placeholder="Contoh: 6"
               value={s2PageBits}
               onChange={setS2PageBits}
               correctValue={4}
@@ -494,7 +494,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="5. Nomor Page (Desimal):"
-              placeholder="Contoh: 0"
+              placeholder="Contoh: 2"
               value={s2PageNum}
               onChange={setS2PageNum}
               correctValue={0}
@@ -504,7 +504,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="6. Frame Hasil Lookup Page 0:"
-              placeholder="Contoh: 6 atau 00110"
+              placeholder="Contoh: 3 atau 00011"
               value={s2FrameNum}
               onChange={setS2FrameNum}
               correctValue={6}
@@ -514,7 +514,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="7. Nilai Offset (Desimal):"
-              placeholder="Contoh: 2050"
+              placeholder="Contoh: 1024"
               value={s2OffsetVal}
               onChange={setS2OffsetVal}
               correctValue={2050}
@@ -524,7 +524,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="8. Alamat Fisik Hasil Akhir (Desimal):"
-              placeholder="Contoh: 26626"
+              placeholder="Contoh: 14336"
               value={s2PhysicalDec}
               onChange={setS2PhysicalDec}
               correctValue={26626}
@@ -636,7 +636,7 @@ export const MemoryExerciseView: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <InputField
               label="a.1. Panjang Bit Offset (Sesuai Kolom Length):"
-              placeholder="Contoh: 12"
+              placeholder="Contoh: 10"
               value={s3OffsetBits}
               onChange={setS3OffsetBits}
               correctValue={12}
@@ -646,7 +646,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="a.2. Panjang Bit No. Segmen (16 - Offset):"
-              placeholder="Contoh: 4"
+              placeholder="Contoh: 6"
               value={s3SegBits}
               onChange={setS3SegBits}
               correctValue={4}
@@ -656,7 +656,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="a.3. Banyaknya Segmen yang Terbentuk (2^x):"
-              placeholder="Contoh: 16"
+              placeholder="Contoh: 8"
               value={s3TotalSegs}
               onChange={setS3TotalSegs}
               correctValue={16}
@@ -666,7 +666,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="b. Nomor Segmen untuk Alamat 875:"
-              placeholder="Contoh: 0"
+              placeholder="Contoh: 3"
               value={s3SegNum}
               onChange={setS3SegNum}
               correctValue={0}
@@ -676,7 +676,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="c. Nilai Offset dalam Biner (12 Bit):"
-              placeholder="Contoh: 0011 0110 1011"
+              placeholder="Contoh: 0001 0010 0011"
               value={s3OffsetBin}
               onChange={setS3OffsetBin}
               correctValue="001101101011"
@@ -686,7 +686,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label="d.1. Validitas Segmen (Ketik: Valid / Invalid):"
-              placeholder="Valid"
+              placeholder="Contoh: Valid / Invalid"
               value={s3Valid}
               onChange={setS3Valid}
               correctValue="Valid"
@@ -697,7 +697,7 @@ export const MemoryExerciseView: React.FC = () => {
             <div className="md:col-span-2">
               <InputField
                 label="d.2. Alamat Fisik Biner (Base + Offset):"
-                placeholder="Contoh: 0011 1100 0000 1110"
+                placeholder="Contoh: 0100 1010 0011 0001"
                 value={s3PhysBin}
                 onChange={setS3PhysBin}
                 correctValue="0011110000001110"
@@ -913,7 +913,7 @@ export const MemoryExerciseView: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
             <InputField
               label={`Fault Ratio (FR) untuk ${activeVm.name}:`}
-              placeholder="Contoh: 3/12 atau 3 / 12"
+              placeholder="Contoh: 7/12 atau 7 / 12"
               value={activeSim.fr}
               onChange={(val) => updateActiveSim((prev) => ({ ...prev, fr: val }))}
               correctValue={activeVm.faultRatio}
@@ -923,7 +923,7 @@ export const MemoryExerciseView: React.FC = () => {
 
             <InputField
               label={`Hit Ratio (HR) untuk ${activeVm.name}:`}
-              placeholder="Contoh: 9/12 atau 9 / 12"
+              placeholder="Contoh: 5/12 atau 5 / 12"
               value={activeSim.hr}
               onChange={(val) => updateActiveSim((prev) => ({ ...prev, hr: val }))}
               correctValue={activeVm.hitRatio}
