@@ -387,7 +387,7 @@ export const virtualMemorySoal: VirtualMemoryReplacementExercise = {
         // Frame 3
         [null, null, null, '1*', '1', '1', '4*', '4*', '4', '4', '5*', '5*'],
       ],
-      pointers: [0, 1, 1, 2, 0, 1, 2, 2, 0, 1, 2, 0], // Pointer position (0, 1, 2)
+      pointers: [1, 2, 2, 0, 1, 2, 0, 0, 1, 1, 0, 0], // Pointer position (0, 1, 2)
       faults: [false, false, false, false, true, true, true, false, true, false, true, false],
       faultRatio: '5 / 12',
       hitRatio: '7 / 12',

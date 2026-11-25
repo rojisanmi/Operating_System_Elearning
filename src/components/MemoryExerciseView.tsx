@@ -109,6 +109,7 @@ type AlgoKey = 'optimal' | 'lru' | 'fifo' | 'clock';
 
 interface AlgoSimState {
   grid: string[][]; // 3 rows x 12 cols
+  clockPointers: string[][]; // 3 rows x 12 cols (for Clock Policy: "->" or "")
   faults: string[]; // 12 cols
   fr: string;
   hr: string;
@@ -118,6 +119,7 @@ interface AlgoSimState {
 
 const createInitialAlgoState = (): AlgoSimState => ({
   grid: [Array(12).fill(''), Array(12).fill(''), Array(12).fill('')],
+  clockPointers: [Array(12).fill(''), Array(12).fill(''), Array(12).fill('')],
   faults: Array(12).fill(''),
   fr: '',
   hr: '',
@@ -189,6 +191,16 @@ export const MemoryExerciseView: React.FC = () => {
     });
   };
 
+  const handlePointerChange = (rowIndex: number, colIndex: number, val: string) => {
+    updateActiveSim((prev) => {
+      const currentPointers = prev.clockPointers || [Array(12).fill(''), Array(12).fill(''), Array(12).fill('')];
+      const newPointers = currentPointers.map((row, r) =>
+        r === rowIndex ? row.map((cVal, c) => (c === colIndex ? val : cVal)) : row
+      );
+      return { ...prev, clockPointers: newPointers };
+    });
+  };
+
   const handleFaultChange = (colIndex: number, val: string) => {
     updateActiveSim((prev) => {
       const newFaults = prev.faults.map((fVal, c) => (c === colIndex ? val : fVal));
@@ -196,23 +208,33 @@ export const MemoryExerciseView: React.FC = () => {
     });
   };
 
-  // Helper to validate a frame cell against key
+  // Helper to validate a frame cell against key (empty if null, no '-' needed)
   const isCellCorrect = (userVal: string, expectedVal: string | number | null): boolean => {
     const norm = userVal.trim().toLowerCase();
-    if (expectedVal === null) {
-      return norm === '-' || norm === '';
+    if (expectedVal === null || expectedVal === '') {
+      return norm === '' || norm === '-';
     }
     const exp = String(expectedVal).trim().toLowerCase();
-    return norm === exp;
+    return norm === exp || norm === exp.replace('*', '');
   };
 
-  // Helper to validate a fault cell against key
+  // Helper to validate pointer for Clock Policy (empty if no pointer, "->" or "→" if pointer)
+  const isPointerCorrect = (userVal: string, isExpectedPointer: boolean): boolean => {
+    const norm = userVal.trim().replace(/\s+/g, '');
+    if (isExpectedPointer) {
+      return norm === '->' || norm === '→' || norm === '>';
+    } else {
+      return norm === '' || norm === '-';
+    }
+  };
+
+  // Helper to validate a fault cell against key (empty if false, no '-' needed)
   const isFaultCorrect = (userVal: string, isFault: boolean): boolean => {
     const norm = userVal.trim().toUpperCase();
     if (isFault) {
       return norm === 'F';
     } else {
-      return norm === '-' || norm === '' || norm === '•';
+      return norm === '' || norm === '-' || norm === '•';
     }
   };
 
@@ -224,11 +246,21 @@ export const MemoryExerciseView: React.FC = () => {
         if (!isCellCorrect(activeSim.grid[r][c], activeVm.grid[r][c])) return false;
       }
     }
-    // 2. Faults
+    // 2. Clock Pointers (if Clock policy)
+    if (vmAlgorithm === 'clock') {
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 12; c++) {
+          const isExpected = virtualMemorySoal.algorithms.clock.pointers[c] === r;
+          const userPtr = activeSim.clockPointers?.[r]?.[c] || '';
+          if (!isPointerCorrect(userPtr, isExpected)) return false;
+        }
+      }
+    }
+    // 3. Faults
     for (let c = 0; c < 12; c++) {
       if (!isFaultCorrect(activeSim.faults[c], activeVm.faults[c])) return false;
     }
-    // 3. FR & HR
+    // 4. FR & HR
     const normFR = activeSim.fr.trim().replace(/\s+/g, '');
     const correctFR = activeVm.faultRatio.trim().replace(/\s+/g, '');
     if (normFR !== correctFR) return false;
@@ -800,8 +832,11 @@ export const MemoryExerciseView: React.FC = () => {
             </div>
             <ul className="list-disc list-inside space-y-0.5 text-[11px] text-amber-900/90">
               <li>Ketik nomor page pada baris <b>Frame 0</b>, <b>Frame 1</b>, dan <b>Frame 2</b> untuk setiap kolom langkah.</li>
-              <li>Untuk sel frame yang masih <b>KOSONG</b> (sebelum ada page yang masuk), ketik tanda strip <b>"-"</b>.</li>
-              <li>Pada baris <b>Fault (F)</b>, ketik huruf <b>"F"</b> jika terjadi penggantian/replacement fault, atau ketik <b>"-"</b> bila hit (tidak fault).</li>
+              <li>Untuk sel frame yang masih <b>KOSONG</b> (sebelum ada page yang masuk), <b>biarkan kosong</b> saja (tidak perlu diisi &quot;-&quot;).</li>
+              {vmAlgorithm === 'clock' && (
+                <li>Khusus <b>Clock Policy 1-Bit</b>: Isi tanda <b>&quot;-&gt;&quot;</b> pada kolom tambahan di sebelah kiri frame yang sedang ditunjuk oleh pointer. Sel pointer yang kosong <b>biarkan kosong</b>.</li>
+              )}
+              <li>Pada baris <b>Fault (F)</b>, ketik huruf <b>&quot;F&quot;</b> jika terjadi penggantian/replacement fault. Jika tidak terjadi fault (hit), <b>biarkan kosong</b> saja.</li>
               <li>Setelah melengkapi tabel, isikan nilai <b>Fault Ratio (FR)</b> dan <b>Hit Ratio (HR)</b> dalam bentuk pecahan (misal: 3/12).</li>
             </ul>
           </div>
@@ -822,32 +857,30 @@ export const MemoryExerciseView: React.FC = () => {
                   {virtualMemorySoal.given.pas.map((p, i) => (
                     <th
                       key={i}
+                      colSpan={vmAlgorithm === 'clock' ? 2 : 1}
                       className="py-2.5 px-1 border border-gray-300 text-purple-900 bg-purple-50/70 font-black text-sm"
                     >
                       {p}
                     </th>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {/* Pointer Row if Clock Policy */}
                 {vmAlgorithm === 'clock' && (
-                  <tr className="bg-amber-50/60 text-[10px]">
-                    <td className="py-1.5 px-3 border border-gray-300 text-left font-bold text-amber-900">
-                      Pointer
-                    </td>
-                    {virtualMemorySoal.algorithms.clock.pointers.map((pt, i) => (
-                      <td key={i} className="py-1.5 px-1 border border-gray-300 font-black text-amber-700">
-                        {pt !== null ? `F${pt}→` : '-'}
-                      </td>
+                  <tr className="bg-slate-50 text-[10px] text-gray-500 font-bold">
+                    <th className="py-1 px-2 border border-gray-300 text-left">Kolom</th>
+                    {virtualMemorySoal.given.pas.map((_, i) => (
+                      <React.Fragment key={i}>
+                        <th className="py-1 px-0.5 border border-gray-300 text-amber-700 bg-amber-50/50 w-7 sm:w-8">→</th>
+                        <th className="py-1 px-0.5 border border-gray-300 text-purple-800 bg-purple-50/40 w-9 sm:w-10">Page</th>
+                      </React.Fragment>
                     ))}
                   </tr>
                 )}
-
+              </thead>
+              <tbody>
                 {/* Frame Rows 0, 1, 2 (Editable Inputs) */}
                 {[0, 1, 2].map((fIdx) => (
                   <tr key={fIdx} className="hover:bg-slate-50">
-                    <td className="py-2 px-3 border border-gray-300 text-left font-bold text-gray-700 bg-gray-50">
+                    <td className="py-2 px-3 border border-gray-300 text-left font-bold text-gray-700 bg-gray-50 whitespace-nowrap">
                       Frame {fIdx}
                     </td>
                     {Array.from({ length: 12 }).map((_, stepIdx) => {
@@ -856,21 +889,49 @@ export const MemoryExerciseView: React.FC = () => {
                       const isCorrect = activeSim.checked && isCellCorrect(userVal, expectedVal);
                       const isIncorrect = activeSim.checked && !isCellCorrect(userVal, expectedVal);
 
+                      const userPtr = activeSim.clockPointers?.[fIdx]?.[stepIdx] || '';
+                      const isExpectedPtr = virtualMemorySoal.algorithms.clock.pointers[stepIdx] === fIdx;
+                      const isPtrCorrect = activeSim.checked && isPointerCorrect(userPtr, isExpectedPtr);
+                      const isPtrIncorrect = activeSim.checked && !isPointerCorrect(userPtr, isExpectedPtr);
+
                       return (
-                        <td key={stepIdx} className="p-1 border border-gray-300">
-                          <input
-                            type="text"
-                            value={userVal}
-                            onChange={(e) => handleCellChange(fIdx, stepIdx, e.target.value)}
-                            placeholder="-"
-                            className={`w-9 h-8 sm:w-10 sm:h-9 text-center font-mono font-bold text-xs rounded-lg border transition-all focus:outline-none focus:ring-2 ${isCorrect
-                                ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-1 ring-emerald-300'
-                                : isIncorrect
+                        <React.Fragment key={stepIdx}>
+                          {/* Extra Pointer column on left for Clock Policy */}
+                          {vmAlgorithm === 'clock' && (
+                            <td className="p-0.5 border border-gray-300 bg-amber-50/20 text-center">
+                              <input
+                                type="text"
+                                value={userPtr}
+                                onChange={(e) => handlePointerChange(fIdx, stepIdx, e.target.value)}
+                                placeholder=""
+                                className={`w-7 h-8 sm:w-8 sm:h-9 text-center font-mono font-black text-xs rounded border transition-all focus:outline-none focus:ring-1 ${
+                                  isPtrCorrect
+                                    ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-1 ring-emerald-300'
+                                    : isPtrIncorrect
+                                    ? 'bg-rose-50 border-rose-500 text-rose-950 ring-1 ring-rose-300'
+                                    : 'bg-white border-amber-200 text-amber-900 focus:ring-amber-500 hover:border-amber-300'
+                                }`}
+                              />
+                            </td>
+                          )}
+
+                          {/* Page content column */}
+                          <td className="p-0.5 sm:p-1 border border-gray-300 text-center">
+                            <input
+                              type="text"
+                              value={userVal}
+                              onChange={(e) => handleCellChange(fIdx, stepIdx, e.target.value)}
+                              placeholder=""
+                              className={`w-9 h-8 sm:w-10 sm:h-9 text-center font-mono font-bold text-xs rounded-lg border transition-all focus:outline-none focus:ring-2 ${
+                                isCorrect
+                                  ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-1 ring-emerald-300'
+                                  : isIncorrect
                                   ? 'bg-rose-50 border-rose-500 text-rose-950 ring-1 ring-rose-300'
                                   : 'bg-white border-gray-300 text-gray-900 focus:ring-blue-500 hover:border-gray-400'
                               }`}
-                          />
-                        </td>
+                            />
+                          </td>
+                        </React.Fragment>
                       );
                     })}
                   </tr>
@@ -878,7 +939,7 @@ export const MemoryExerciseView: React.FC = () => {
 
                 {/* Fault Row (Editable Inputs) */}
                 <tr className="bg-rose-50/50">
-                  <td className="py-2 px-3 border border-gray-300 text-left font-bold text-rose-800 bg-rose-50/70">
+                  <td className="py-2 px-3 border border-gray-300 text-left font-bold text-rose-800 bg-rose-50/70 whitespace-nowrap">
                     Fault (F)
                   </td>
                   {Array.from({ length: 12 }).map((_, stepIdx) => {
@@ -888,18 +949,23 @@ export const MemoryExerciseView: React.FC = () => {
                     const isIncorrect = activeSim.checked && !isFaultCorrect(userVal, expectedFault);
 
                     return (
-                      <td key={stepIdx} className="p-1 border border-gray-300">
+                      <td
+                        key={stepIdx}
+                        colSpan={vmAlgorithm === 'clock' ? 2 : 1}
+                        className="p-0.5 sm:p-1 border border-gray-300 text-center"
+                      >
                         <input
                           type="text"
                           value={userVal}
                           onChange={(e) => handleFaultChange(stepIdx, e.target.value)}
-                          placeholder="-"
-                          className={`w-9 h-8 sm:w-10 sm:h-9 text-center font-mono font-black text-xs rounded-lg border transition-all focus:outline-none focus:ring-2 ${isCorrect
+                          placeholder=""
+                          className={`w-9 h-8 sm:w-10 sm:h-9 text-center font-mono font-black text-xs rounded-lg border transition-all focus:outline-none focus:ring-2 ${
+                            isCorrect
                               ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-1 ring-emerald-300'
                               : isIncorrect
-                                ? 'bg-rose-50 border-rose-500 text-rose-950 ring-1 ring-rose-300'
-                                : 'bg-white border-rose-200 text-gray-900 focus:ring-rose-500 hover:border-rose-300'
-                            }`}
+                              ? 'bg-rose-50 border-rose-500 text-rose-950 ring-1 ring-rose-300'
+                              : 'bg-white border-rose-200 text-gray-900 focus:ring-rose-500 hover:border-rose-300'
+                          }`}
                         />
                       </td>
                     );
@@ -972,14 +1038,20 @@ export const MemoryExerciseView: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                // Populate full key for this algorithm
+                // Populate full key for this algorithm (empty cells left blank, no '-')
                 const filledGrid = activeVm.grid.map((row) =>
-                  row.map((cell) => (cell === null ? '-' : String(cell)))
+                  row.map((cell) => (cell === null ? '' : String(cell)))
                 );
-                const filledFaults = activeVm.faults.map((f) => (f ? 'F' : '-'));
+                const filledFaults = activeVm.faults.map((f) => (f ? 'F' : ''));
+                const filledPointers = [0, 1, 2].map((fIdx) =>
+                  Array.from({ length: 12 }).map((_, stepIdx) =>
+                    virtualMemorySoal.algorithms.clock.pointers[stepIdx] === fIdx ? '->' : ''
+                  )
+                );
                 updateActiveSim((prev) => ({
                   ...prev,
                   grid: filledGrid,
+                  clockPointers: filledPointers,
                   faults: filledFaults,
                   fr: activeVm.faultRatio,
                   hr: activeVm.hitRatio,
